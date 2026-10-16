@@ -113,7 +113,7 @@ class SellerDashboardScreen extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   decoration: BoxDecoration(
-                    color: user.isStoreOpen ? AppColors.secondaryLight : AppColors.errorLight,
+                    color: user.isStoreOpen ? AppColors.successLight : AppColors.errorLight,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Row(
@@ -121,7 +121,7 @@ class SellerDashboardScreen extends StatelessWidget {
                       Icon(
                         Icons.circle,
                         size: 10,
-                        color: user.isStoreOpen ? AppColors.secondary : AppColors.error,
+                        color: user.isStoreOpen ? AppColors.success : AppColors.error,
                       ),
                       const SizedBox(width: 8),
                       Text(
@@ -129,14 +129,14 @@ class SellerDashboardScreen extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w800,
-                          color: user.isStoreOpen ? AppColors.secondaryDark : AppColors.error,
+                          color: user.isStoreOpen ? AppColors.successDark : AppColors.error,
                         ),
                       ),
                       const SizedBox(width: 8),
                       Switch(
                         value: user.isStoreOpen,
                         onChanged: (v) => state.toggleStoreStatus(),
-                        activeThumbColor: AppColors.secondary,
+                        activeThumbColor: AppColors.success,
                       ),
                     ],
                   ),
@@ -178,7 +178,7 @@ class SellerDashboardScreen extends StatelessWidget {
                   value: '${state.sellerMenuItems.where((m) => m.isReadyStock).length} Produk',
                   subtitle: 'Dari ${state.sellerMenuItems.length} total menu stan',
                   icon: Icons.restaurant_menu_rounded,
-                  color: AppColors.secondary,
+                  color: AppColors.primaryOrange,
                 ),
               ),
               const SizedBox(width: 16),
@@ -281,7 +281,7 @@ class SellerDashboardScreen extends StatelessWidget {
                               state.updateOrderStatus(order.id, OrderStatus.processing);
                             },
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.secondary,
+                              backgroundColor: AppColors.primary,
                             ),
                             child: const Text('Terima & Mulai Masak'),
                           ),
@@ -711,7 +711,7 @@ class SellerDashboardScreen extends StatelessWidget {
               Expanded(
                 child: Text(
                   'Saldo: ${_formatRupiah(availableBalance)}',
-                  style: const TextStyle(fontSize: 11, color: AppColors.secondaryDark, fontWeight: FontWeight.w700),
+                  style: const TextStyle(fontSize: 11, color: AppColors.accentOrange, fontWeight: FontWeight.w700),
                 ),
               ),
               InkWell(
@@ -780,7 +780,7 @@ class SellerDashboardScreen extends StatelessWidget {
                       color: Colors.white.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Icon(Icons.account_balance_wallet_rounded, color: Color(0xFF4ADE80), size: 20),
+                    child: const Icon(Icons.account_balance_wallet_rounded, color: AppColors.goldenYellow, size: 20),
                   ),
                   const SizedBox(width: 12),
                   const Column(
@@ -842,9 +842,9 @@ class SellerDashboardScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('SALDO TERSEDIA', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Color(0xFF4ADE80), letterSpacing: 0.5)),
+                    const Text('SALDO TERSEDIA', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: AppColors.goldenYellow, letterSpacing: 0.5)),
                     const SizedBox(height: 4),
-                    Text(_formatRupiah(available), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFF4ADE80))),
+                    Text(_formatRupiah(available), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: AppColors.goldenYellow)),
                     const SizedBox(height: 2),
                     const Text('Bisa langsung ditarik', style: TextStyle(fontSize: 10, color: Colors.white54)),
                   ],
@@ -858,9 +858,9 @@ class SellerDashboardScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('SEDANG DIPROSES', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Colors.amberAccent, letterSpacing: 0.5)),
+                    const Text('SEDANG DIPROSES', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: AppColors.amberYellow, letterSpacing: 0.5)),
                     const SizedBox(height: 4),
-                    Text(_formatRupiah(pending), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Colors.amberAccent)),
+                    Text(_formatRupiah(pending), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: AppColors.amberYellow)),
                     const SizedBox(height: 2),
                     const Text('Tertahan proses pengajuan', style: TextStyle(fontSize: 10, color: Colors.white54)),
                   ],
@@ -897,7 +897,7 @@ class SellerDashboardScreen extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.verified_rounded, size: 16, color: Color(0xFF4ADE80)),
+                    const Icon(Icons.verified_rounded, size: 16, color: AppColors.goldenYellow),
                     const SizedBox(width: 8),
                     Text(
                       'Rekening Terverifikasi: ${user.bankName} • ${user.maskedBankAccountNumber} (a.n. ${user.bankAccountHolder.isNotEmpty ? user.bankAccountHolder : user.name})',
@@ -1055,7 +1055,7 @@ class SellerDashboardScreen extends StatelessWidget {
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
-                            color: isReady ? AppColors.secondaryLight : AppColors.errorLight,
+                            color: isReady ? AppColors.successLight : AppColors.errorLight,
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
@@ -1064,7 +1064,7 @@ class SellerDashboardScreen extends StatelessWidget {
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w800,
-                              color: isReady ? AppColors.secondaryDark : AppColors.error,
+                              color: isReady ? AppColors.successDark : AppColors.error,
                             ),
                           ),
                         ),

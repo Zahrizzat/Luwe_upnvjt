@@ -50,7 +50,7 @@ class DiscoveryScreen extends StatelessWidget {
                 padding: const EdgeInsets.all(28),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
-                    colors: [Color(0xFFEA580C), Color(0xFFC2410C), Color(0xFF9A3412)],
+                    colors: [AppColors.primaryRed, AppColors.secondaryRed, AppColors.accentOrange],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
@@ -181,14 +181,14 @@ class DiscoveryScreen extends StatelessWidget {
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    const Icon(Icons.star_rounded, size: 15, color: Color(0xFFD97706)),
+                                    const Icon(Icons.star_rounded, size: 15, color: AppColors.amberYellow),
                                     const SizedBox(width: 4),
                                     Text(
                                       topRating.toStringAsFixed(1),
                                       style: const TextStyle(
                                         fontSize: 12,
                                         fontWeight: FontWeight.w900,
-                                        color: Color(0xFF92400E),
+                                        color: AppColors.accentOrange,
                                       ),
                                     ),
                                     if (topReviewCount > 0) ...[
@@ -557,23 +557,23 @@ class DiscoveryScreen extends StatelessWidget {
                       label: const Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.star_rounded, size: 14, color: Color(0xFFD97706)),
+                          Icon(Icons.star_rounded, size: 14, color: AppColors.amberYellow),
                           SizedBox(width: 4),
                           Text('Rating 4.8+'),
                         ],
                       ),
                       onSelected: (val) => state.setMinRating(val ? 4.8 : 0.0),
-                      selectedColor: const Color(0xFFFEF3C7),
+                      selectedColor: AppColors.pastelYellow,
                       labelStyle: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
-                        color: state.minRating >= 4.8 ? const Color(0xFF92400E) : AppColors.textPrimary,
+                        color: state.minRating >= 4.8 ? AppColors.accentOrange : AppColors.textPrimary,
                       ),
                       backgroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
                         side: BorderSide(
-                          color: state.minRating >= 4.8 ? const Color(0xFFD97706) : AppColors.surfaceBorder,
+                          color: state.minRating >= 4.8 ? AppColors.goldenYellow : AppColors.surfaceBorder,
                         ),
                       ),
                     ),
@@ -644,10 +644,11 @@ class DiscoveryScreen extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(6),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFEF3C7),
+                    color: AppColors.pastelYellow,
                     borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: AppColors.goldenYellow),
                   ),
-                  child: const Icon(Icons.star_rounded, color: Color(0xFFD97706), size: 20),
+                  child: const Icon(Icons.star_rounded, color: AppColors.amberYellow, size: 20),
                 ),
                 const SizedBox(width: 10),
                 const Column(

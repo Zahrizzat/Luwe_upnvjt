@@ -47,19 +47,20 @@ class OrderConfirmationDialog extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFDCFCE7),
+                          color: AppColors.cream,
                           borderRadius: BorderRadius.circular(6),
+                          border: Border.all(color: AppColors.goldenYellow),
                         ),
                         child: const Row(
                           children: [
-                            Icon(Icons.verified_rounded, size: 14, color: AppColors.secondary),
+                            Icon(Icons.verified_rounded, size: 14, color: AppColors.accentOrange),
                             SizedBox(width: 4),
                             Text(
                               'TRANSAKSI RESMI KAMPUS',
                               style: TextStyle(
                                 fontSize: 10,
                                 fontWeight: FontWeight.w800,
-                                color: AppColors.secondaryDark,
+                                color: AppColors.primaryRed,
                                 letterSpacing: 0.5,
                               ),
                             ),
@@ -86,18 +87,18 @@ class OrderConfirmationDialog extends StatelessWidget {
                       width: 64,
                       height: 64,
                       decoration: BoxDecoration(
-                        color: const Color(0xFFDCFCE7),
+                        color: AppColors.successLight,
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: AppColors.secondary.withValues(alpha: 0.2),
+                            color: AppColors.success.withValues(alpha: 0.25),
                             blurRadius: 16,
                             offset: const Offset(0, 4),
                           ),
                         ],
                       ),
                       child: const Center(
-                        child: Icon(Icons.check_rounded, size: 36, color: AppColors.secondary),
+                        child: Icon(Icons.check_rounded, size: 36, color: AppColors.success),
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -198,7 +199,7 @@ class OrderConfirmationDialog extends StatelessWidget {
                                       : 'Tunai di Tempat',
                                   color: order.paymentMethod == PaymentMethod.qris
                                       ? const Color(0xFF0284C7)
-                                      : AppColors.secondary,
+                                      : AppColors.primaryOrange,
                                 ),
                               ),
                             ],
@@ -522,7 +523,7 @@ class OrderConfirmationDialog extends StatelessWidget {
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: isDiscount ? FontWeight.w700 : FontWeight.w600,
-                color: isDiscount ? AppColors.secondaryDark : AppColors.textSecondary,
+                color: isDiscount ? AppColors.accentOrange : AppColors.textSecondary,
               ),
             ),
             if (subtitle != null)
@@ -537,7 +538,7 @@ class OrderConfirmationDialog extends StatelessWidget {
           style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w800,
-            color: isDiscount ? AppColors.secondaryDark : AppColors.textPrimary,
+            color: isDiscount ? AppColors.primaryRed : AppColors.textPrimary,
           ),
         ),
       ],

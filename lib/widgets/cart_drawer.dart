@@ -295,7 +295,7 @@ class _CartDrawerState extends State<CartDrawer> {
                                 return Container(
                                   margin: const EdgeInsets.only(right: 6),
                                   child: ActionChip(
-                                    avatar: Icon(Icons.place_rounded, size: 14, color: loc.isPrimary ? AppColors.secondaryDark : AppColors.primary),
+                                    avatar: Icon(Icons.place_rounded, size: 14, color: loc.isPrimary ? AppColors.primaryRed : AppColors.primary),
                                     label: Text('${loc.title}${loc.isPrimary ? " (Utama)" : ""}'),
                                     onPressed: () {
                                       setState(() {
@@ -305,12 +305,12 @@ class _CartDrawerState extends State<CartDrawer> {
                                         }
                                       });
                                     },
-                                    backgroundColor: loc.isPrimary ? const Color(0xFFF0FDF4) : AppColors.canvas,
-                                    side: BorderSide(color: loc.isPrimary ? const Color(0xFF86EFAC) : AppColors.surfaceBorder),
+                                    backgroundColor: loc.isPrimary ? AppColors.cream : AppColors.canvas,
+                                    side: BorderSide(color: loc.isPrimary ? AppColors.goldenYellow : AppColors.surfaceBorder),
                                     labelStyle: TextStyle(
                                       fontSize: 11,
                                       fontWeight: loc.isPrimary ? FontWeight.w800 : FontWeight.w600,
-                                      color: loc.isPrimary ? AppColors.secondaryDark : AppColors.textPrimary,
+                                      color: loc.isPrimary ? AppColors.primaryRed : AppColors.textPrimary,
                                     ),
                                   ),
                                 );
@@ -385,12 +385,12 @@ class _CartDrawerState extends State<CartDrawer> {
                                 onSelected: (val) {
                                   if (val) setState(() => _paymentMethod = PaymentMethod.cash);
                                 },
-                                selectedColor: AppColors.secondaryLight,
+                                selectedColor: AppColors.cream,
                                 labelStyle: TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w700,
                                   color: _paymentMethod == PaymentMethod.cash
-                                      ? AppColors.secondaryDark
+                                      ? AppColors.accentOrange
                                       : AppColors.textPrimary,
                                 ),
                               ),
@@ -418,7 +418,7 @@ class _CartDrawerState extends State<CartDrawer> {
                             if (state.appliedDiscount > 0)
                               Text(
                                 '-Rp ${state.appliedDiscount}',
-                                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: AppColors.secondaryDark),
+                                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: AppColors.primaryRed),
                               ),
                           ],
                         ),
@@ -427,26 +427,26 @@ class _CartDrawerState extends State<CartDrawer> {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFDCFCE7),
+                              color: AppColors.cream,
                               borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: const Color(0xFF86EFAC)),
+                              border: Border.all(color: AppColors.goldenYellow),
                             ),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Row(
                                   children: [
-                                    const Icon(Icons.confirmation_num_rounded, size: 16, color: AppColors.secondary),
+                                    const Icon(Icons.confirmation_num_rounded, size: 16, color: AppColors.accentOrange),
                                     const SizedBox(width: 8),
                                     Text(
                                       '${state.appliedVoucherCode} (Hemat Rp ${state.appliedDiscount})',
-                                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: AppColors.secondaryDark),
+                                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: AppColors.primaryRed),
                                     ),
                                   ],
                                 ),
                                 InkWell(
                                   onTap: () => state.removeVoucher(),
-                                  child: const Icon(Icons.close_rounded, size: 16, color: AppColors.secondaryDark),
+                                  child: const Icon(Icons.close_rounded, size: 16, color: AppColors.accentOrange),
                                 ),
                               ],
                             ),
@@ -484,7 +484,7 @@ class _CartDrawerState extends State<CartDrawer> {
                                   }
                                 },
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppColors.secondary,
+                                  backgroundColor: AppColors.primaryOrange,
                                   foregroundColor: Colors.white,
                                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
                                 ),
@@ -615,7 +615,7 @@ class _CartDrawerState extends State<CartDrawer> {
                               style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w700,
-                                color: _deliveryMethod == DeliveryMethod.pickup ? AppColors.secondaryDark : AppColors.textPrimary,
+                                color: _deliveryMethod == DeliveryMethod.pickup ? AppColors.accentOrange : AppColors.textPrimary,
                               ),
                             ),
                           ],
@@ -627,11 +627,11 @@ class _CartDrawerState extends State<CartDrawer> {
                             children: [
                               Text(
                                 'Diskon Voucher (${state.appliedVoucherCode}):',
-                                style: const TextStyle(fontSize: 12, color: AppColors.secondaryDark, fontWeight: FontWeight.w700),
+                                style: const TextStyle(fontSize: 12, color: AppColors.accentOrange, fontWeight: FontWeight.w700),
                               ),
                               Text(
                                 '-Rp $discount',
-                                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: AppColors.secondaryDark),
+                                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: AppColors.primaryRed),
                               ),
                             ],
                           ),

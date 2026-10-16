@@ -60,7 +60,7 @@ class _SellerMenuScreenState extends State<SellerMenuScreen> {
                               const SizedBox(height: 2),
                               Text(
                                 'Toko: ${currentStore.name}',
-                                style: const TextStyle(fontSize: 12, color: AppColors.secondary, fontWeight: FontWeight.w600),
+                                style: const TextStyle(fontSize: 12, color: AppColors.accentOrange, fontWeight: FontWeight.w600),
                               ),
                             ],
                           ),
@@ -208,7 +208,7 @@ class _SellerMenuScreenState extends State<SellerMenuScreen> {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text('Menu "$name" berhasil ditambahkan ke toko!'),
-                              backgroundColor: AppColors.secondary,
+                              backgroundColor: AppColors.primary,
                             ),
                           );
                         },
@@ -357,12 +357,12 @@ class _SellerMenuScreenState extends State<SellerMenuScreen> {
                                       style: TextStyle(
                                         fontSize: 13,
                                         fontWeight: FontWeight.w700,
-                                        color: isReady ? AppColors.secondary : AppColors.error,
+                                        color: isReady ? AppColors.successDark : AppColors.error,
                                       ),
                                     ),
                                     Switch(
                                       value: isReady,
-                                      activeThumbColor: AppColors.secondary,
+                                      activeThumbColor: AppColors.success,
                                       onChanged: (val) {
                                         setDialogState(() {
                                           isReady = val;
@@ -401,7 +401,7 @@ class _SellerMenuScreenState extends State<SellerMenuScreen> {
                       width: double.infinity,
                       child: ElevatedButton.icon(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.secondary,
+                          backgroundColor: AppColors.primary,
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                         ),
@@ -437,7 +437,7 @@ class _SellerMenuScreenState extends State<SellerMenuScreen> {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 content: Text('Menu "$name" berhasil diperbarui!'),
-                                backgroundColor: AppColors.secondary,
+                                backgroundColor: AppColors.primary,
                               ),
                             );
                           }
@@ -535,7 +535,7 @@ class _SellerMenuScreenState extends State<SellerMenuScreen> {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text('Stok "${item.name}" diperbarui menjadi $newStock porsi.'),
-                  backgroundColor: AppColors.secondary,
+                  backgroundColor: AppColors.primary,
                 ),
               );
             },
@@ -622,7 +622,7 @@ class _SellerMenuScreenState extends State<SellerMenuScreen> {
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                             decoration: BoxDecoration(
                               color: (currentStore?.isOpen ?? state.currentUser.isStoreOpen)
-                                  ? AppColors.secondaryLight
+                                  ? AppColors.successLight
                                   : AppColors.errorLight,
                               borderRadius: BorderRadius.circular(6),
                             ),
@@ -632,7 +632,7 @@ class _SellerMenuScreenState extends State<SellerMenuScreen> {
                                 fontSize: 11,
                                 fontWeight: FontWeight.w700,
                                 color: (currentStore?.isOpen ?? state.currentUser.isStoreOpen)
-                                    ? AppColors.secondary
+                                    ? AppColors.successDark
                                     : AppColors.error,
                               ),
                             ),
@@ -914,9 +914,9 @@ class _SellerMenuScreenState extends State<SellerMenuScreen> {
                                 child: Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                                   decoration: BoxDecoration(
-                                    color: item.stockCount > 0 ? AppColors.secondaryLight : AppColors.errorLight,
+                                    color: item.stockCount > 0 ? AppColors.successLight : AppColors.errorLight,
                                     borderRadius: BorderRadius.circular(6),
-                                    border: Border.all(color: item.stockCount > 0 ? const Color(0xFFBBF7D0) : const Color(0xFFFCA5A5)),
+                                    border: Border.all(color: item.stockCount > 0 ? AppColors.successLight : AppColors.errorLight),
                                   ),
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
@@ -926,7 +926,7 @@ class _SellerMenuScreenState extends State<SellerMenuScreen> {
                                         style: TextStyle(
                                           fontSize: 12,
                                           fontWeight: FontWeight.w800,
-                                          color: item.stockCount > 0 ? AppColors.secondaryDark : AppColors.error,
+                                          color: item.stockCount > 0 ? AppColors.successDark : AppColors.error,
                                         ),
                                       ),
                                       const SizedBox(width: 4),
@@ -966,7 +966,7 @@ class _SellerMenuScreenState extends State<SellerMenuScreen> {
                               style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w700,
-                                color: item.isReadyStock && item.stockCount > 0 ? AppColors.secondary : AppColors.error,
+                                color: item.isReadyStock && item.stockCount > 0 ? AppColors.successDark : AppColors.error,
                               ),
                             ),
                             const SizedBox(height: 2),
@@ -977,7 +977,7 @@ class _SellerMenuScreenState extends State<SellerMenuScreen> {
                         Switch(
                           value: item.isReadyStock && item.stockCount > 0,
                           onChanged: (_) => state.toggleStock(item.id),
-                          activeThumbColor: AppColors.secondary,
+                          activeThumbColor: AppColors.success,
                         ),
                         const SizedBox(width: 8),
                         // Edit Menu Button

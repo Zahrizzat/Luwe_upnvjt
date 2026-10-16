@@ -139,7 +139,7 @@ class AppSidebar extends StatelessWidget {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                             decoration: BoxDecoration(
-                              color: AppColors.secondaryLight,
+                              color: AppColors.cream,
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: const Text(
@@ -147,7 +147,7 @@ class AppSidebar extends StatelessWidget {
                               style: TextStyle(
                                 fontSize: 9,
                                 fontWeight: FontWeight.w800,
-                                color: AppColors.secondaryDark,
+                                color: AppColors.primaryRed,
                               ),
                             ),
                           ),
@@ -204,7 +204,7 @@ class AppSidebar extends StatelessWidget {
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2.5),
                             decoration: BoxDecoration(
-                              color: isBuyer ? AppColors.secondaryLight : AppColors.primaryLight,
+                              color: isBuyer ? AppColors.cream : AppColors.primaryLight,
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Text(
@@ -212,7 +212,7 @@ class AppSidebar extends StatelessWidget {
                               style: TextStyle(
                                 fontSize: 9.5,
                                 fontWeight: FontWeight.w700,
-                                color: isBuyer ? AppColors.secondaryDark : AppColors.primary,
+                                color: isBuyer ? AppColors.accentOrange : AppColors.primary,
                               ),
                             ),
                           ),
@@ -282,7 +282,7 @@ class AppSidebar extends StatelessWidget {
                       size: 16,
                       color: !isLoggedIn
                           ? AppColors.textMuted
-                          : (isBuyer ? AppColors.primary : AppColors.secondary),
+                          : (isBuyer ? AppColors.primary : AppColors.secondaryRed),
                     ),
                     const SizedBox(width: 8),
                     Text(
@@ -456,7 +456,7 @@ class AppSidebar extends StatelessWidget {
                         ),
                       ),
                       IconButton(
-                        icon: const Icon(Icons.person_add_rounded, size: 18, color: AppColors.secondary),
+                        icon: const Icon(Icons.person_add_rounded, size: 18, color: AppColors.primaryOrange),
                         tooltip: 'Daftar Akun Baru',
                         onPressed: () => _openRegisterModal(context),
                       ),

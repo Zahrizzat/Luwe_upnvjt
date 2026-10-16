@@ -336,13 +336,13 @@ class _LoginScreenState extends State<LoginScreen> {
                   const SizedBox(height: 8),
                   OutlinedButton.icon(
                     onPressed: _isLoading ? null : _loginAsDemoSeller,
-                    icon: const Icon(Icons.storefront_rounded, size: 16, color: AppColors.secondary),
+                    icon: const Icon(Icons.storefront_rounded, size: 16, color: AppColors.primaryOrange),
                     label: const Text(
                       'Login Cepat: Penjual (Adistya)',
-                      style: TextStyle(color: AppColors.secondaryDark),
+                      style: TextStyle(color: AppColors.accentOrange, fontWeight: FontWeight.w700),
                     ),
                     style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: AppColors.secondary),
+                      side: const BorderSide(color: AppColors.primaryOrange),
                       padding: const EdgeInsets.symmetric(vertical: 12),
                     ),
                   ),

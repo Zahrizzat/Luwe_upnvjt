@@ -64,9 +64,9 @@ class _RatingDialogState extends State<RatingDialog> {
   }
 
   Color _getStarColor(int stars) {
-    if (stars <= 2) return const Color(0xFFDC2626);
-    if (stars == 3) return const Color(0xFFF59E0B);
-    return const Color(0xFFD97706);
+    if (stars <= 2) return AppColors.error;
+    if (stars == 3) return AppColors.goldenYellow;
+    return AppColors.amberYellow;
   }
 
   Future<void> _handleSubmit() async {
@@ -99,7 +99,7 @@ class _RatingDialogState extends State<RatingDialog> {
                 ? 'Penilaian untuk "${widget.orderItem.item.name}" berhasil diperbarui!'
                 : 'Terima kasih! Penilaian untuk "${widget.orderItem.item.name}" berhasil dikirim.',
           ),
-          backgroundColor: AppColors.secondary,
+          backgroundColor: AppColors.primary,
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -133,10 +133,11 @@ class _RatingDialogState extends State<RatingDialog> {
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFFEF3C7),
+                          color: AppColors.pastelYellow,
                           borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: AppColors.goldenYellow),
                         ),
-                        child: const Icon(Icons.star_rounded, color: Color(0xFFD97706), size: 22),
+                        child: const Icon(Icons.star_rounded, color: AppColors.amberYellow, size: 22),
                       ),
                       const SizedBox(width: 12),
                       Column(
@@ -244,7 +245,7 @@ class _RatingDialogState extends State<RatingDialog> {
                                 child: Icon(
                                   Icons.star_rounded,
                                   size: 40,
-                                  color: isFilled ? const Color(0xFFD97706) : Colors.grey.shade300,
+                                  color: isFilled ? AppColors.amberYellow : Colors.grey.shade300,
                                 ),
                               ),
                             ),

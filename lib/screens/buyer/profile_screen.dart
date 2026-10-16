@@ -179,9 +179,9 @@ class ProfileScreen extends StatelessWidget {
       return Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: const Color(0xFFF1F8E9),
+          color: AppColors.cream.withValues(alpha: 0.45),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFFAED581)),
+          border: Border.all(color: AppColors.goldenYellow),
         ),
         child: Row(
           children: [
@@ -190,8 +190,9 @@ class ProfileScreen extends StatelessWidget {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.cream),
               ),
-              child: const Icon(Icons.storefront_rounded, color: AppColors.secondary, size: 28),
+              child: const Icon(Icons.storefront_rounded, color: AppColors.primaryRed, size: 28),
             ),
             const SizedBox(width: 16),
             Expanded(
@@ -202,13 +203,13 @@ class ProfileScreen extends StatelessWidget {
                     children: [
                       Text(
                         user.storeName,
-                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Color(0xFF2E7D32)),
+                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: AppColors.primaryRed),
                       ),
                       const SizedBox(width: 8),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
-                          color: AppColors.secondary,
+                          color: AppColors.primaryRed,
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: const Text('Terverifikasi', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w700)),
@@ -218,7 +219,7 @@ class ProfileScreen extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     'Lokasi: ${user.storeLocation} • Toko Aktif',
-                    style: const TextStyle(fontSize: 12, color: Color(0xFF558B2F)),
+                    style: const TextStyle(fontSize: 12, color: AppColors.accentOrange, fontWeight: FontWeight.w600),
                   ),
                 ],
               ),
@@ -228,7 +229,7 @@ class ProfileScreen extends StatelessWidget {
                 state.toggleUserRole();
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.secondary,
+                backgroundColor: AppColors.primaryRed,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               ),
@@ -247,9 +248,9 @@ class ProfileScreen extends StatelessWidget {
       return Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: const Color(0xFFFFF8E1),
+          color: AppColors.pastelYellow.withValues(alpha: 0.4),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFFFFE082)),
+          border: Border.all(color: AppColors.goldenYellow),
         ),
         child: Row(
           children: [
@@ -259,7 +260,7 @@ class ProfileScreen extends StatelessWidget {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Icon(Icons.hourglass_top_rounded, color: Color(0xFFFFA000), size: 28),
+              child: const Icon(Icons.hourglass_top_rounded, color: AppColors.amberYellow, size: 28),
             ),
             const SizedBox(width: 16),
             Expanded(
@@ -268,12 +269,12 @@ class ProfileScreen extends StatelessWidget {
                 children: [
                   Text(
                     'Pengajuan Toko: ${user.storeName}',
-                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Color(0xFF6D4C41)),
+                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
                   ),
                   const SizedBox(height: 4),
                   const Text(
                     'Sedang ditinjau oleh tim verifikasi kantin UPNVJT (Menunggu Verifikasi).',
-                    style: TextStyle(fontSize: 12, color: Color(0xFF8D6E63)),
+                    style: TextStyle(fontSize: 12, color: AppColors.textMuted),
                   ),
                 ],
               ),
@@ -281,8 +282,8 @@ class ProfileScreen extends StatelessWidget {
             OutlinedButton(
               onPressed: () => _openStoreVerification(context),
               style: OutlinedButton.styleFrom(
-                foregroundColor: const Color(0xFFE65100),
-                side: const BorderSide(color: Color(0xFFFFA000)),
+                foregroundColor: AppColors.accentOrange,
+                side: const BorderSide(color: AppColors.amberYellow),
               ),
               child: const Text('Cek Status Toko', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
             ),

@@ -467,21 +467,21 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
                                           Container(
                                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                                             decoration: BoxDecoration(
-                                              color: const Color(0xFFFEF3C7),
+                                              color: AppColors.pastelYellow,
                                               borderRadius: BorderRadius.circular(8),
-                                              border: Border.all(color: const Color(0xFFFDE68A)),
+                                              border: Border.all(color: AppColors.goldenYellow),
                                             ),
                                             child: Row(
                                               mainAxisSize: MainAxisSize.min,
                                               children: [
-                                                const Icon(Icons.star_rounded, size: 16, color: Color(0xFFD97706)),
+                                                const Icon(Icons.star_rounded, size: 16, color: AppColors.amberYellow),
                                                 const SizedBox(width: 4),
                                                 Text(
                                                   rating != null ? rating.toStringAsFixed(1) : 'Belum ada rating',
                                                   style: const TextStyle(
                                                     fontSize: 12,
                                                     fontWeight: FontWeight.w800,
-                                                    color: Color(0xFF92400E),
+                                                    color: AppColors.accentOrange,
                                                   ),
                                                 ),
                                                 const SizedBox(width: 4),
@@ -489,7 +489,7 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
                                                   rating != null ? '($reviewCount ulasan)' : '(0 penilaian)',
                                                   style: const TextStyle(
                                                     fontSize: 11,
-                                                    color: Color(0xFF92400E),
+                                                    color: AppColors.accentOrange,
                                                     fontWeight: FontWeight.w600,
                                                   ),
                                                 ),

@@ -147,7 +147,7 @@ class AppTopBar extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: user.isStoreOpen ? AppColors.secondaryLight : AppColors.errorLight,
+                color: user.isStoreOpen ? AppColors.successLight : AppColors.errorLight,
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Row(
@@ -155,7 +155,7 @@ class AppTopBar extends StatelessWidget {
                   Icon(
                     Icons.circle,
                     size: 10,
-                    color: user.isStoreOpen ? AppColors.secondary : AppColors.error,
+                    color: user.isStoreOpen ? AppColors.success : AppColors.error,
                   ),
                   const SizedBox(width: 6),
                   Text(
@@ -163,14 +163,14 @@ class AppTopBar extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
-                      color: user.isStoreOpen ? AppColors.secondaryDark : AppColors.error,
+                      color: user.isStoreOpen ? AppColors.success : AppColors.error,
                     ),
                   ),
                   const SizedBox(width: 6),
                   Switch(
                     value: user.isStoreOpen,
                     onChanged: (v) => state.toggleStoreStatus(),
-                    activeThumbColor: AppColors.secondary,
+                    activeThumbColor: AppColors.success,
                     materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
                 ],

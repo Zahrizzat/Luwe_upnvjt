@@ -120,12 +120,13 @@ class ExploreScreen extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: AppColors.secondaryLight,
+                    color: AppColors.cream,
                     borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: AppColors.goldenYellow),
                   ),
                   child: Text(
                     'Lokasi: ${state.selectedFaculty}',
-                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.secondaryDark),
+                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.accentOrange),
                   ),
                 ),
             ],

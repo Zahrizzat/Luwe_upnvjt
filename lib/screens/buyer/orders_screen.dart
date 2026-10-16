@@ -117,16 +117,17 @@ class OrdersScreen extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                     decoration: BoxDecoration(
-                      color: AppColors.secondaryLight,
+                      color: AppColors.cream,
                       borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: AppColors.goldenYellow),
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.bolt_rounded, size: 16, color: AppColors.secondaryDark),
+                        const Icon(Icons.bolt_rounded, size: 16, color: AppColors.accentOrange),
                         const SizedBox(width: 6),
                         Text(
                           '${orders.where((o) => o.status != OrderStatus.completed && o.status != OrderStatus.cancelled).length} Pesanan Berjalan',
-                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.secondaryDark),
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.accentOrange),
                         ),
                       ],
                     ),
@@ -193,8 +194,8 @@ class OrdersScreen extends StatelessWidget {
 
     switch (order.status) {
       case OrderStatus.waitingConfirmation:
-        statusColor = const Color(0xFFD97706);
-        statusBg = const Color(0xFFFEF3C7);
+        statusColor = AppColors.accentOrange;
+        statusBg = AppColors.pastelYellow;
         statusIcon = Icons.hourglass_top_rounded;
         break;
       case OrderStatus.processing:
@@ -203,13 +204,13 @@ class OrdersScreen extends StatelessWidget {
         statusIcon = Icons.soup_kitchen_rounded;
         break;
       case OrderStatus.readyForPickupOrDelivery:
-        statusColor = AppColors.secondary;
-        statusBg = AppColors.secondaryLight;
+        statusColor = AppColors.primaryRed;
+        statusBg = AppColors.cream;
         statusIcon = Icons.delivery_dining_rounded;
         break;
       case OrderStatus.completed:
-        statusColor = const Color(0xFF16A34A);
-        statusBg = const Color(0xFFDCFCE7);
+        statusColor = AppColors.success;
+        statusBg = AppColors.successLight;
         statusIcon = Icons.check_circle_rounded;
         break;
       case OrderStatus.cancelled:
@@ -591,7 +592,7 @@ class OrdersScreen extends StatelessWidget {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content: Text(ok ? 'Pesanan berhasil dibatalkan.' : 'Gagal membatalkan pesanan.'),
-                                  backgroundColor: ok ? AppColors.secondaryDark : AppColors.error,
+                                  backgroundColor: ok ? AppColors.primary : AppColors.error,
                                 ),
                               );
                             }
@@ -616,7 +617,7 @@ class OrdersScreen extends StatelessWidget {
                               actions: [
                                 TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Belum')),
                                 ElevatedButton(
-                                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.secondary, foregroundColor: Colors.white),
+                                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white),
                                   onPressed: () => Navigator.pop(ctx, true),
                                   child: const Text('Sudah Diterima'),
                                 ),
@@ -629,14 +630,14 @@ class OrdersScreen extends StatelessWidget {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content: Text(ok ? 'Pesanan selesai! Selamat menikmati hidangan kampus.' : 'Gagal konfirmasi pesanan.'),
-                                  backgroundColor: AppColors.secondaryDark,
+                                  backgroundColor: AppColors.primary,
                                 ),
                               );
                             }
                           }
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.secondary,
+                          backgroundColor: AppColors.primary,
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                         ),
@@ -660,8 +661,8 @@ class OrdersScreen extends StatelessWidget {
           height: 22,
           decoration: BoxDecoration(
             color: isDone
-                ? AppColors.secondary
-                : (isActive ? AppColors.primary : AppColors.surfaceMuted),
+                ? AppColors.primary
+                : (isActive ? AppColors.primaryOrange : AppColors.surfaceMuted),
             shape: BoxShape.circle,
           ),
           child: Center(
@@ -695,7 +696,7 @@ class OrdersScreen extends StatelessWidget {
       child: Container(
         height: 2,
         margin: const EdgeInsets.symmetric(horizontal: 8),
-        color: isDone ? AppColors.secondary : AppColors.surfaceBorder,
+        color: isDone ? AppColors.primary : AppColors.surfaceBorder,
       ),
     );
   }
@@ -976,7 +977,7 @@ class OrdersScreen extends StatelessWidget {
           label,
           style: TextStyle(
             fontSize: 12,
-            color: isDiscount ? AppColors.secondaryDark : AppColors.textMuted,
+            color: isDiscount ? AppColors.accentOrange : AppColors.textMuted,
             fontWeight: isBold ? FontWeight.w800 : (isDiscount ? FontWeight.w700 : FontWeight.w500),
           ),
         ),
@@ -987,7 +988,7 @@ class OrdersScreen extends StatelessWidget {
             style: TextStyle(
               fontSize: isBold ? 14 : 12,
               color: isDiscount
-                  ? AppColors.secondaryDark
+                  ? AppColors.accentOrange
                   : (isBold ? AppColors.primary : AppColors.textPrimary),
               fontWeight: isBold ? FontWeight.w900 : FontWeight.w700,
             ),

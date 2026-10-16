@@ -322,10 +322,10 @@ class _StoreCardState extends State<StoreCard> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
                           decoration: BoxDecoration(
-                            color: rating != null ? const Color(0xFFFEF3C7) : AppColors.surfaceMuted,
+                            color: rating != null ? AppColors.pastelYellow : AppColors.surfaceMuted,
                             borderRadius: BorderRadius.circular(6),
                             border: Border.all(
-                              color: rating != null ? const Color(0xFFFDE68A) : AppColors.surfaceBorder,
+                              color: rating != null ? AppColors.goldenYellow : AppColors.surfaceBorder,
                               width: 0.8,
                             ),
                           ),
@@ -335,7 +335,7 @@ class _StoreCardState extends State<StoreCard> {
                               Icon(
                                 rating != null ? Icons.star_rounded : Icons.star_outline_rounded,
                                 size: 12,
-                                color: rating != null ? const Color(0xFFD97706) : AppColors.textMuted,
+                                color: rating != null ? AppColors.amberYellow : AppColors.textMuted,
                               ),
                               const SizedBox(width: 2),
                               if (rating != null) ...[
@@ -344,7 +344,7 @@ class _StoreCardState extends State<StoreCard> {
                                   style: const TextStyle(
                                     fontSize: 10.5,
                                     fontWeight: FontWeight.w800,
-                                    color: Color(0xFF92400E),
+                                    color: AppColors.accentOrange,
                                   ),
                                 ),
                                 const SizedBox(width: 2),
@@ -352,7 +352,7 @@ class _StoreCardState extends State<StoreCard> {
                                   '($reviews)',
                                   style: TextStyle(
                                     fontSize: 9,
-                                    color: const Color(0xFF92400E).withValues(alpha: 0.8),
+                                    color: AppColors.accentOrange.withValues(alpha: 0.85),
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),

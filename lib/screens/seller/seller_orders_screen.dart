@@ -184,7 +184,7 @@ class _SellerOrdersScreenState extends State<SellerOrdersScreen> {
                               fontWeight: FontWeight.w700,
                               color: order.paymentMethod == PaymentMethod.qris
                                   ? const Color(0xFF0284C7)
-                                  : AppColors.secondary,
+                                  : AppColors.primaryOrange,
                             ),
                           ),
                         ],
@@ -250,8 +250,8 @@ class _SellerOrdersScreenState extends State<SellerOrdersScreen> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text('Diskon Voucher (${order.voucherCode ?? "UPN"}):', style: const TextStyle(fontSize: 11, color: AppColors.secondaryDark, fontWeight: FontWeight.w700)),
-                                Text('-Rp ${order.discount}', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: AppColors.secondaryDark)),
+                                Text('Diskon Voucher (${order.voucherCode ?? "UPN"}):', style: const TextStyle(fontSize: 11, color: AppColors.accentOrange, fontWeight: FontWeight.w700)),
+                                Text('-Rp ${order.discount}', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: AppColors.accentOrange)),
                               ],
                             ),
                           ],
@@ -271,17 +271,18 @@ class _SellerOrdersScreenState extends State<SellerOrdersScreen> {
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFFEF3C7),
+                          color: AppColors.pastelYellow,
                           borderRadius: BorderRadius.circular(6),
+                          border: Border.all(color: AppColors.goldenYellow),
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.note_alt_outlined, size: 14, color: Color(0xFFB45309)),
+                            const Icon(Icons.note_alt_outlined, size: 14, color: AppColors.accentOrange),
                             const SizedBox(width: 6),
                             Expanded(
                               child: Text(
                                 'Catatan Khusus: "${order.notes}"',
-                                style: const TextStyle(fontSize: 11, color: Color(0xFFB45309), fontWeight: FontWeight.w600),
+                                style: const TextStyle(fontSize: 11, color: AppColors.accentOrange, fontWeight: FontWeight.w600),
                               ),
                             ),
                           ],
@@ -305,7 +306,7 @@ class _SellerOrdersScreenState extends State<SellerOrdersScreen> {
                             onPressed: () => state.updateSellerOrderStatus(order.id, OrderStatus.processing),
                             icon: const Icon(Icons.check, size: 16),
                             label: const Text('Terima & Mulai Masak'),
-                            style: ElevatedButton.styleFrom(backgroundColor: AppColors.secondary, foregroundColor: Colors.white),
+                            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white),
                           ),
                         ] else if (order.status == OrderStatus.processing) ...[
                           ElevatedButton.icon(
@@ -323,7 +324,7 @@ class _SellerOrdersScreenState extends State<SellerOrdersScreen> {
                             onPressed: () => state.updateSellerOrderStatus(order.id, OrderStatus.completed),
                             icon: const Icon(Icons.check_circle_outline, size: 16),
                             label: const Text('Selesaikan Transaksi (Masuk Omset)'),
-                            style: ElevatedButton.styleFrom(backgroundColor: AppColors.secondary, foregroundColor: Colors.white),
+                            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white),
                           ),
                         ],
                       ],

@@ -303,7 +303,7 @@ class _TarikSaldoDialogState extends State<TarikSaldoDialog> with SingleTickerPr
                       children: [
                         const Text(
                           'SALDO TERSEDIA',
-                          style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Color(0xFF4ADE80), letterSpacing: 0.5),
+                          style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: AppColors.goldenYellow, letterSpacing: 0.5),
                         ),
                         const SizedBox(height: 4),
                         Text(
@@ -663,7 +663,7 @@ class _TarikSaldoDialogState extends State<TarikSaldoDialog> with SingleTickerPr
                       ),
                       Text(
                         _formatRupiah(netAmount),
-                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFF16A34A)),
+                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: AppColors.primaryRed),
                       ),
                     ],
                   ),
@@ -676,18 +676,18 @@ class _TarikSaldoDialogState extends State<TarikSaldoDialog> with SingleTickerPr
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: const Color(0xFFEFF6FF),
+                color: AppColors.pastelYellow.withValues(alpha: 0.4),
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: const Color(0xFFBFDBFE)),
+                border: Border.all(color: AppColors.goldenYellow),
               ),
               child: const Row(
                 children: [
-                  Icon(Icons.info_outline_rounded, color: Color(0xFF2563EB), size: 18),
+                  Icon(Icons.info_outline_rounded, color: AppColors.accentOrange, size: 18),
                   SizedBox(width: 10),
                   Expanded(
                     child: Text(
                       'Estimasi waktu proses verifikasi & pencairan adalah 2–3 hari kerja. Waktu ini merupakan perkiraan operasional pihak kampus, bukan jaminan instan langsung masuk.',
-                      style: TextStyle(fontSize: 11, color: Color(0xFF1E40AF), height: 1.3),
+                      style: TextStyle(fontSize: 11, color: AppColors.textPrimary, height: 1.3),
                     ),
                   ),
                 ],
@@ -943,8 +943,8 @@ class _TarikSaldoDialogState extends State<TarikSaldoDialog> with SingleTickerPr
     switch (status) {
       case WithdrawalStatus.waitingVerification:
       case WithdrawalStatus.pending:
-        bg = const Color(0xFFFEF3C7);
-        fg = const Color(0xFFD97706);
+        bg = AppColors.pastelYellow;
+        fg = AppColors.accentOrange;
         break;
       case WithdrawalStatus.processing:
       case WithdrawalStatus.approved:
@@ -952,8 +952,8 @@ class _TarikSaldoDialogState extends State<TarikSaldoDialog> with SingleTickerPr
         fg = const Color(0xFF0284C7);
         break;
       case WithdrawalStatus.completed:
-        bg = AppColors.secondaryLight;
-        fg = AppColors.secondaryDark;
+        bg = AppColors.successLight;
+        fg = AppColors.successDark;
         break;
       case WithdrawalStatus.rejected:
         bg = AppColors.errorLight;

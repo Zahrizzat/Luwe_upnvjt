@@ -180,7 +180,7 @@ class _ProductDetailDialogState extends State<ProductDetailDialog> {
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.storefront_rounded, size: 16, color: AppColors.secondary),
+                          const Icon(Icons.storefront_rounded, size: 16, color: AppColors.accentOrange),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Column(
@@ -596,17 +596,18 @@ class _ProductDetailDialogState extends State<ProductDetailDialog> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFDCFCE7),
+                            color: AppColors.cream,
                             borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: AppColors.goldenYellow),
                           ),
                           child: const Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(Icons.check_circle_rounded, size: 10, color: Color(0xFF16A34A)),
+                              Icon(Icons.check_circle_rounded, size: 10, color: AppColors.accentOrange),
                               SizedBox(width: 3),
                               Text(
                                 'Pembeli Terverifikasi',
-                                style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: Color(0xFF15803D)),
+                                style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: AppColors.primaryRed),
                               ),
                             ],
                           ),
@@ -636,7 +637,7 @@ class _ProductDetailDialogState extends State<ProductDetailDialog> {
               return Icon(
                 isFilled ? Icons.star_rounded : Icons.star_outline_rounded,
                 size: 15,
-                color: isFilled ? const Color(0xFFD97706) : Colors.grey.shade400,
+                color: isFilled ? AppColors.amberYellow : Colors.grey.shade400,
               );
             }),
           ),

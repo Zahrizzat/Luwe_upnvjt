@@ -89,7 +89,7 @@ class _StoreVerificationScreenState extends State<StoreVerificationScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Pengajuan toko berhasil dikirim! Menunggu verifikasi tim kampus.'),
-            backgroundColor: AppColors.secondary,
+            backgroundColor: AppColors.primary,
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -409,7 +409,7 @@ class _StoreVerificationScreenState extends State<StoreVerificationScreen> {
                     Expanded(
                       child: ElevatedButton.icon(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.secondary,
+                          backgroundColor: AppColors.primary,
                           foregroundColor: Colors.white,
                         ),
                         onPressed: () async {
@@ -467,13 +467,13 @@ class _StoreVerificationScreenState extends State<StoreVerificationScreen> {
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: const Color(0xFFE8F5E9),
+              color: AppColors.cream.withValues(alpha: 0.45),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFFA5D6A7)),
+              border: Border.all(color: AppColors.goldenYellow),
             ),
             child: Row(
               children: [
-                const Icon(Icons.verified_rounded, color: AppColors.secondary, size: 36),
+                const Icon(Icons.verified_rounded, color: AppColors.primaryRed, size: 36),
                 const SizedBox(width: 16),
                 Expanded(
                   child: Column(
@@ -481,12 +481,12 @@ class _StoreVerificationScreenState extends State<StoreVerificationScreen> {
                     children: [
                       const Text(
                         'Status: Toko Disetujui & Terverifikasi!',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF1B5E20)),
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.primaryRed),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         'Selamat! Stan kuliner ${user.storeName} telah resmi disetujui. Anda kini memiliki hak akses penuh untuk mengelola katalog menu dan pesanan masuk.',
-                        style: const TextStyle(fontSize: 12, color: Color(0xFF2E7D32), height: 1.4),
+                        style: const TextStyle(fontSize: 12, color: AppColors.accentOrange, height: 1.4, fontWeight: FontWeight.w500),
                       ),
                     ],
                   ),
@@ -510,7 +510,7 @@ class _StoreVerificationScreenState extends State<StoreVerificationScreen> {
             width: double.infinity,
             child: ElevatedButton.icon(
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.secondary,
+                backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 16),
               ),
@@ -520,7 +520,7 @@ class _StoreVerificationScreenState extends State<StoreVerificationScreen> {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text('Beralih ke Mode Penjual: ${user.storeName}'),
-                    backgroundColor: AppColors.secondary,
+                    backgroundColor: AppColors.primary,
                   ),
                 );
               },

@@ -184,13 +184,14 @@ class QrisPaymentDialog extends StatelessWidget {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text('Simulasi pembayaran QRIS Rp ${order.totalAmount} berhasil dicatat! Status: Lunas (Simulasi QRIS).'),
-                      backgroundColor: AppColors.secondary,
+                      backgroundColor: AppColors.primary,
                       behavior: SnackBarBehavior.floating,
                     ),
                   );
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.secondary,
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 14),
                 ),
                 icon: const Icon(Icons.check_circle_rounded, size: 18),

@@ -12,8 +12,8 @@ class CampusBadge extends StatelessWidget {
     super.key,
     required this.text,
     this.icon,
-    this.backgroundColor = AppColors.secondaryLight,
-    this.textColor = AppColors.secondary,
+    this.backgroundColor = AppColors.cream,
+    this.textColor = AppColors.primaryRed,
     this.borderColor,
   });
 
@@ -21,9 +21,9 @@ class CampusBadge extends StatelessWidget {
     return const CampusBadge(
       text: 'UPNVJT Terverifikasi',
       icon: Icons.verified_rounded,
-      backgroundColor: AppColors.secondaryLight,
-      textColor: AppColors.secondary,
-      borderColor: Color(0xFFBBF7D0),
+      backgroundColor: AppColors.cream,
+      textColor: AppColors.primaryRed,
+      borderColor: AppColors.goldenYellow,
     );
   }
 
@@ -31,9 +31,9 @@ class CampusBadge extends StatelessWidget {
     return const CampusBadge(
       text: 'Halal',
       icon: Icons.check_circle_outline_rounded,
-      backgroundColor: Color(0xFFF0FDF4),
-      textColor: AppColors.secondaryDark,
-      borderColor: Color(0xFFBBF7D0),
+      backgroundColor: AppColors.surfaceMuted,
+      textColor: AppColors.textSecondary,
+      borderColor: AppColors.surfaceBorder,
     );
   }
 
@@ -41,8 +41,8 @@ class CampusBadge extends StatelessWidget {
     return const CampusBadge(
       text: 'Ready Stock',
       icon: Icons.radio_button_checked_rounded,
-      backgroundColor: Color(0xFFDCFCE7),
-      textColor: AppColors.secondary,
+      backgroundColor: AppColors.successLight,
+      textColor: AppColors.success,
       borderColor: Color(0xFF86EFAC),
     );
   }
@@ -61,9 +61,9 @@ class CampusBadge extends StatelessWidget {
     return CampusBadge(
       text: text,
       icon: Icons.local_fire_department_rounded,
-      backgroundColor: AppColors.primaryLight,
-      textColor: AppColors.primary,
-      borderColor: const Color(0xFFFED7AA),
+      backgroundColor: AppColors.pastelYellow,
+      textColor: AppColors.accentOrange,
+      borderColor: AppColors.goldenYellow,
     );
   }
 
@@ -91,7 +91,7 @@ class CampusBadge extends StatelessWidget {
             style: TextStyle(
               color: textColor,
               fontSize: 11,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w700,
             ),
           ),
         ],
