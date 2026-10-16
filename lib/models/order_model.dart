@@ -29,8 +29,10 @@ class OrderModel {
   final String merchantName;
   final List<CartItemModel> items;
   final int subtotal;
-  final int campusServiceFee; // Biaya Layanan Kampus Rp 1.000
+  final int campusServiceFee; // Biaya Layanan Kampus LuWe! Rp 1.000
   final int deliveryFee;
+  final int discount;
+  final String? voucherCode;
   final int totalAmount;
   final DeliveryMethod deliveryMethod;
   final String destinationLocation; // Contoh: Gedung Giri Santoso Lt. 2
@@ -54,16 +56,20 @@ class OrderModel {
     required this.subtotal,
     this.campusServiceFee = 1000,
     this.deliveryFee = 0,
+    this.discount = 0,
+    this.voucherCode,
     required this.totalAmount,
     required this.deliveryMethod,
     required this.destinationLocation,
     required this.paymentMethod,
-    this.paymentStatus = 'Lunas',
+    this.paymentStatus = 'Menunggu Pembayaran',
     required this.status,
     required this.createdAt,
     this.notes,
     this.cancellationReason,
   });
+
+  int get serviceFee => campusServiceFee;
 
   String get statusText {
     switch (status) {
@@ -98,6 +104,8 @@ class OrderModel {
     int? subtotal,
     int? campusServiceFee,
     int? deliveryFee,
+    int? discount,
+    String? voucherCode,
     int? totalAmount,
     DeliveryMethod? deliveryMethod,
     String? destinationLocation,
@@ -121,6 +129,8 @@ class OrderModel {
       subtotal: subtotal ?? this.subtotal,
       campusServiceFee: campusServiceFee ?? this.campusServiceFee,
       deliveryFee: deliveryFee ?? this.deliveryFee,
+      discount: discount ?? this.discount,
+      voucherCode: voucherCode ?? this.voucherCode,
       totalAmount: totalAmount ?? this.totalAmount,
       deliveryMethod: deliveryMethod ?? this.deliveryMethod,
       destinationLocation: destinationLocation ?? this.destinationLocation,

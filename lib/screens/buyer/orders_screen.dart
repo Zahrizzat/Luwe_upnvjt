@@ -3,6 +3,7 @@ import '../../constants/app_colors.dart';
 import '../../models/order_model.dart';
 import '../../providers/app_state.dart';
 import '../../widgets/qris_dialog.dart';
+import '../../widgets/rating_dialog.dart';
 import '../auth/login_screen.dart';
 
 class OrdersScreen extends StatelessWidget {
@@ -332,42 +333,154 @@ class OrdersScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 ...order.items.map((it) {
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  final isCompleted = order.status == OrderStatus.completed;
+                  final userRating = isCompleted ? state.getUserRatingForOrderItem(order.id, it.item.id) : null;
+
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 10),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppColors.canvas,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: AppColors.surfaceBorder),
+                    ),
+                    child: Column(
                       children: [
                         Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: AppColors.surfaceMuted,
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: Text(
-                                '${it.quantity}x',
-                                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
-                              ),
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(4),
+                                    border: Border.all(color: AppColors.surfaceBorder),
+                                  ),
+                                  child: Text(
+                                    '${it.quantity}x',
+                                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Text(
+                                  it.item.name,
+                                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+                                ),
+                                if (it.selectedSpiceLevel.isNotEmpty) ...[
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    '(${it.selectedSpiceLevel})',
+                                    style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
+                                  ),
+                                ],
+                              ],
                             ),
-                            const SizedBox(width: 10),
                             Text(
-                              it.item.name,
-                              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                              'Rp ${it.subtotal}',
+                              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
                             ),
-                            if (it.selectedSpiceLevel.isNotEmpty) ...[
-                              const SizedBox(width: 8),
-                              Text(
-                                '(${it.selectedSpiceLevel})',
-                                style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
-                              ),
-                            ],
                           ],
                         ),
-                        Text(
-                          'Rp ${it.subtotal}',
-                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
-                        ),
+                        if (isCompleted) ...[
+                          const SizedBox(height: 8),
+                          const Divider(height: 1, color: AppColors.surfaceBorder),
+                          const SizedBox(height: 8),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              if (userRating != null) ...[
+                                Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFFEF3C7),
+                                        borderRadius: BorderRadius.circular(6),
+                                        border: Border.all(color: const Color(0xFFFDE68A)),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          const Icon(Icons.star_rounded, size: 14, color: Color(0xFFD97706)),
+                                          const SizedBox(width: 3),
+                                          Text(
+                                            '${userRating.stars} Bintang',
+                                            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF92400E)),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    if (userRating.reviewText.isNotEmpty) ...[
+                                      const SizedBox(width: 8),
+                                      ConstrainedBox(
+                                        constraints: const BoxConstraints(maxWidth: 280),
+                                        child: Text(
+                                          '"${userRating.reviewText}"',
+                                          style: const TextStyle(fontSize: 11, fontStyle: FontStyle.italic, color: AppColors.textSecondary),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                                OutlinedButton.icon(
+                                  onPressed: () {
+                                    showDialog(
+                                      context: context,
+                                      builder: (ctx) => RatingDialog(
+                                        orderItem: it,
+                                        orderCode: order.id,
+                                        storeId: it.item.merchantId,
+                                        storeName: order.merchantName,
+                                        state: state,
+                                        existingRating: userRating,
+                                      ),
+                                    );
+                                  },
+                                  icon: const Icon(Icons.edit_note_rounded, size: 14),
+                                  label: const Text('Ubah Penilaian', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700)),
+                                  style: OutlinedButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                    minimumSize: Size.zero,
+                                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                  ),
+                                ),
+                              ] else ...[
+                                const Text(
+                                  'Pesanan telah selesai! Berikan ulasan menu ini:',
+                                  style: TextStyle(fontSize: 11, color: AppColors.textMuted),
+                                ),
+                                ElevatedButton.icon(
+                                  onPressed: () {
+                                    showDialog(
+                                      context: context,
+                                      builder: (ctx) => RatingDialog(
+                                        orderItem: it,
+                                        orderCode: order.id,
+                                        storeId: it.item.merchantId,
+                                        storeName: order.merchantName,
+                                        state: state,
+                                        existingRating: null,
+                                      ),
+                                    );
+                                  },
+                                  icon: const Icon(Icons.star_rate_rounded, size: 14),
+                                  label: const Text('Beri Penilaian', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800)),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFFD97706),
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                    minimumSize: Size.zero,
+                                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ],
                       ],
                     ),
                   );
@@ -666,6 +779,9 @@ class OrdersScreen extends StatelessWidget {
                       const Text('Daftar Produk:', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
                       const SizedBox(height: 8),
                       ...order.items.map((it) {
+                        final isCompleted = order.status == OrderStatus.completed;
+                        final userRating = isCompleted ? state.getUserRatingForOrderItem(order.id, it.item.id) : null;
+
                         return Container(
                           margin: const EdgeInsets.only(bottom: 8),
                           padding: const EdgeInsets.all(10),
@@ -674,28 +790,106 @@ class OrdersScreen extends StatelessWidget {
                             borderRadius: BorderRadius.circular(10),
                             border: Border.all(color: AppColors.surfaceBorder),
                           ),
-                          child: Row(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                decoration: BoxDecoration(
-                                  color: AppColors.primaryLight,
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                                child: Text('${it.quantity}x', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12, color: AppColors.primary)),
+                              Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.primaryLight,
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: Text('${it.quantity}x', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12, color: AppColors.primary)),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(it.item.name, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+                                        if (it.selectedSpiceLevel.isNotEmpty)
+                                          Text(it.selectedSpiceLevel, style: const TextStyle(fontSize: 11, color: AppColors.textMuted)),
+                                      ],
+                                    ),
+                                  ),
+                                  Text('Rp ${it.subtotal}', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
+                                ],
                               ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
+                              if (isCompleted) ...[
+                                const SizedBox(height: 6),
+                                const Divider(height: 1, color: AppColors.surfaceBorder),
+                                const SizedBox(height: 6),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
-                                    Text(it.item.name, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
-                                    if (it.selectedSpiceLevel.isNotEmpty)
-                                      Text(it.selectedSpiceLevel, style: const TextStyle(fontSize: 11, color: AppColors.textMuted)),
+                                    if (userRating != null) ...[
+                                      Row(
+                                        children: [
+                                          const Icon(Icons.star_rounded, size: 14, color: Color(0xFFD97706)),
+                                          const SizedBox(width: 2),
+                                          Text(
+                                            '${userRating.stars} Bintang (${userRating.reviewText.isNotEmpty ? userRating.reviewText : "Tanpa ulasan"})',
+                                            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF92400E)),
+                                          ),
+                                        ],
+                                      ),
+                                      TextButton(
+                                        onPressed: () {
+                                          Navigator.pop(ctx);
+                                          showDialog(
+                                            context: context,
+                                            builder: (dCtx) => RatingDialog(
+                                              orderItem: it,
+                                              orderCode: order.id,
+                                              storeId: it.item.merchantId,
+                                              storeName: order.merchantName,
+                                              state: state,
+                                              existingRating: userRating,
+                                            ),
+                                          );
+                                        },
+                                        style: TextButton.styleFrom(
+                                          padding: EdgeInsets.zero,
+                                          minimumSize: Size.zero,
+                                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                        ),
+                                        child: const Text('Ubah Ulasan', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700)),
+                                      ),
+                                    ] else ...[
+                                      const Text(
+                                        'Pesanan selesai. Beri rating:',
+                                        style: TextStyle(fontSize: 11, color: AppColors.textMuted),
+                                      ),
+                                      ElevatedButton(
+                                        onPressed: () {
+                                          Navigator.pop(ctx);
+                                          showDialog(
+                                            context: context,
+                                            builder: (dCtx) => RatingDialog(
+                                              orderItem: it,
+                                              orderCode: order.id,
+                                              storeId: it.item.merchantId,
+                                              storeName: order.merchantName,
+                                              state: state,
+                                              existingRating: null,
+                                            ),
+                                          );
+                                        },
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: const Color(0xFFD97706),
+                                          foregroundColor: Colors.white,
+                                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                          minimumSize: Size.zero,
+                                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                        ),
+                                        child: const Text('Beri Rating', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800)),
+                                      ),
+                                    ],
                                   ],
                                 ),
-                              ),
-                              Text('Rp ${it.subtotal}', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
+                              ],
                             ],
                           ),
                         );
@@ -722,15 +916,28 @@ class OrdersScreen extends StatelessWidget {
                               _buildDetailRow('Catatan Pembeli', order.notes!),
                             ],
                             const Divider(height: 16),
-                            _buildDetailRow('Metode Pembayaran', order.paymentMethod == PaymentMethod.qris ? 'QRIS Kampus' : 'Tunai'),
+                            _buildDetailRow('Metode Pembayaran', order.paymentMethod == PaymentMethod.qris ? 'Simulasi QRIS Kampus' : 'Tunai / COD'),
                             const SizedBox(height: 6),
                             _buildDetailRow('Status Pembayaran', order.paymentStatus),
                             const Divider(height: 16),
-                            _buildDetailRow('Subtotal', 'Rp ${order.subtotal}'),
+                            _buildDetailRow('Subtotal Produk', 'Rp ${order.subtotal}'),
                             const SizedBox(height: 6),
-                            _buildDetailRow('Biaya Layanan Kampus', 'Rp ${order.campusServiceFee}'),
-                            const SizedBox(height: 8),
-                            _buildDetailRow('Total Pembayaran', 'Rp ${order.totalAmount}', isBold: true),
+                            _buildDetailRow('Biaya Layanan LuWe!', 'Rp ${order.campusServiceFee}'),
+                            const SizedBox(height: 6),
+                            _buildDetailRow(
+                              'Biaya Pengantaran',
+                              order.deliveryFee == 0 ? 'Gratis (Rp 0)' : 'Rp ${order.deliveryFee}',
+                            ),
+                            if (order.discount > 0) ...[
+                              const SizedBox(height: 6),
+                              _buildDetailRow(
+                                'Diskon Voucher (${order.voucherCode ?? "UPN"})',
+                                '-Rp ${order.discount}',
+                                isDiscount: true,
+                              ),
+                            ],
+                            const Divider(height: 16),
+                            _buildDetailRow('Total Pembayaran Akhir', 'Rp ${order.totalAmount}', isBold: true),
                           ],
                         ),
                       ),
@@ -761,16 +968,29 @@ class OrdersScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildDetailRow(String label, String value, {bool isBold = false}) {
+  Widget _buildDetailRow(String label, String value, {bool isBold = false, bool isDiscount = false}) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: TextStyle(fontSize: 12, color: AppColors.textMuted, fontWeight: isBold ? FontWeight.w800 : FontWeight.w500)),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            color: isDiscount ? AppColors.secondaryDark : AppColors.textMuted,
+            fontWeight: isBold ? FontWeight.w800 : (isDiscount ? FontWeight.w700 : FontWeight.w500),
+          ),
+        ),
         Flexible(
           child: Text(
             value,
             textAlign: TextAlign.right,
-            style: TextStyle(fontSize: 12, color: isBold ? AppColors.primary : AppColors.textPrimary, fontWeight: isBold ? FontWeight.w900 : FontWeight.w700),
+            style: TextStyle(
+              fontSize: isBold ? 14 : 12,
+              color: isDiscount
+                  ? AppColors.secondaryDark
+                  : (isBold ? AppColors.primary : AppColors.textPrimary),
+              fontWeight: isBold ? FontWeight.w900 : FontWeight.w700,
+            ),
           ),
         ),
       ],

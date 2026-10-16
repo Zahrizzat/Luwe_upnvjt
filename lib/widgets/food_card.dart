@@ -20,6 +20,8 @@ class FoodCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isFav = state.isFavorite(item.id);
+    final isStoreOpen = state.isItemStoreOpen(item);
+    final canOrder = item.isReadyStock && isStoreOpen;
 
     return InkWell(
       onTap: onTap,
@@ -59,13 +61,32 @@ class FoodCard extends StatelessWidget {
                     ),
                   ),
                 ),
-                // Stock Badge
+                // Stock Badge / Closed Badge
                 Positioned(
                   top: 10,
                   left: 10,
-                  child: item.isReadyStock
-                      ? CampusBadge.readyStock()
-                      : CampusBadge.outOfStock(),
+                  child: !isStoreOpen
+                      ? Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFDC2626),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.storefront_rounded, size: 10, color: Colors.white),
+                              SizedBox(width: 4),
+                              Text(
+                                'Toko Tutup',
+                                style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w800),
+                              ),
+                            ],
+                          ),
+                        )
+                      : (item.isReadyStock
+                          ? CampusBadge.readyStock()
+                          : CampusBadge.outOfStock()),
                 ),
                 // Favorite Button
                 Positioned(
@@ -214,7 +235,7 @@ class FoodCard extends StatelessWidget {
 
                         // Add Button
                         ElevatedButton(
-                          onPressed: item.isReadyStock
+                          onPressed: canOrder
                               ? () {
                                   if (!state.isLoggedIn) {
                                     AuthGuardDialog.requireAuth(
@@ -222,32 +243,47 @@ class FoodCard extends StatelessWidget {
                                       state,
                                       message: 'Masuk ke akun Luwe kamu untuk menambahkan pesanan ke keranjang.',
                                       onAuthenticated: () {
-                                        state.addToCart(item);
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          SnackBar(
-                                            content: Text('${item.name} berhasil ditambahkan ke keranjang!'),
-                                            duration: const Duration(seconds: 1),
-                                            backgroundColor: AppColors.primary,
-                                            behavior: SnackBarBehavior.floating,
-                                          ),
-                                        );
+                                        final ok = state.addToCart(item);
+                                        if (ok) {
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            SnackBar(
+                                              content: Text('${item.name} berhasil ditambahkan ke keranjang!'),
+                                              duration: const Duration(seconds: 1),
+                                              backgroundColor: AppColors.primary,
+                                              behavior: SnackBarBehavior.floating,
+                                            ),
+                                          );
+                                        }
                                       },
                                     );
                                   } else {
-                                    state.addToCart(item);
+                                    final ok = state.addToCart(item);
+                                    if (ok) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: Text('${item.name} berhasil ditambahkan ke keranjang!'),
+                                          duration: const Duration(seconds: 1),
+                                          backgroundColor: AppColors.primary,
+                                          behavior: SnackBarBehavior.floating,
+                                        ),
+                                      );
+                                    }
+                                  }
+                                }
+                              : () {
+                                  if (!isStoreOpen) {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
-                                        content: Text('${item.name} berhasil ditambahkan ke keranjang!'),
-                                        duration: const Duration(seconds: 1),
-                                        backgroundColor: AppColors.primary,
+                                        content: Text('Toko "${item.merchantName}" sedang tutup. Tidak dapat memesan saat ini.'),
+                                        backgroundColor: const Color(0xFFDC2626),
                                         behavior: SnackBarBehavior.floating,
                                       ),
                                     );
                                   }
-                                }
-                              : null,
+                                },
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primary,
+                            backgroundColor: canOrder ? AppColors.primary : AppColors.surfaceMuted,
+                            foregroundColor: canOrder ? Colors.white : AppColors.textLight,
                             disabledBackgroundColor: AppColors.surfaceMuted,
                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                             minimumSize: Size.zero,
@@ -259,17 +295,21 @@ class FoodCard extends StatelessWidget {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Icon(
-                                item.isReadyStock ? Icons.add_rounded : Icons.block_rounded,
+                                !isStoreOpen
+                                    ? Icons.lock_clock_rounded
+                                    : (item.isReadyStock ? Icons.add_rounded : Icons.block_rounded),
                                 size: 14,
-                                color: item.isReadyStock ? Colors.white : AppColors.textLight,
+                                color: canOrder ? Colors.white : AppColors.textLight,
                               ),
                               const SizedBox(width: 4),
                               Text(
-                                item.isReadyStock ? 'Pesan' : 'Habis',
+                                !isStoreOpen
+                                    ? 'Tutup'
+                                    : (item.isReadyStock ? 'Pesan' : 'Habis'),
                                 style: TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w700,
-                                  color: item.isReadyStock ? Colors.white : AppColors.textLight,
+                                  color: canOrder ? Colors.white : AppColors.textLight,
                                 ),
                               ),
                             ],

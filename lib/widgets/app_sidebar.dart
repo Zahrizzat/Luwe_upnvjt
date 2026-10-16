@@ -183,22 +183,26 @@ class AppSidebar extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      isLoggedIn ? 'MODE APLIKASI' : 'STATUS PENGGUNA',
-                      style: const TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.textMuted,
-                        letterSpacing: 0.5,
+                    Flexible(
+                      child: Text(
+                        isLoggedIn ? 'MODE APLIKASI' : 'STATUS PENGGUNA',
+                        style: const TextStyle(
+                          fontSize: 9.5,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textMuted,
+                          letterSpacing: 0.4,
+                        ),
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
+                    const SizedBox(width: 4),
                     if (isLoggedIn) ...[
                       if (user.isSellerApproved)
                         InkWell(
                           onTap: () => state.toggleUserRole(),
                           borderRadius: BorderRadius.circular(6),
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2.5),
                             decoration: BoxDecoration(
                               color: isBuyer ? AppColors.secondaryLight : AppColors.primaryLight,
                               borderRadius: BorderRadius.circular(6),
@@ -206,7 +210,7 @@ class AppSidebar extends StatelessWidget {
                             child: Text(
                               isBuyer ? 'Ganti ke Toko' : 'Ganti ke Pembeli',
                               style: TextStyle(
-                                fontSize: 10,
+                                fontSize: 9.5,
                                 fontWeight: FontWeight.w700,
                                 color: isBuyer ? AppColors.secondaryDark : AppColors.primary,
                               ),
@@ -218,7 +222,7 @@ class AppSidebar extends StatelessWidget {
                           onTap: () => _openStoreVerification(context),
                           borderRadius: BorderRadius.circular(6),
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2.5),
                             decoration: BoxDecoration(
                               color: user.verificationStatus == StoreVerificationStatus.pending
                                   ? const Color(0xFFFFF8E1)
@@ -234,7 +238,7 @@ class AppSidebar extends StatelessWidget {
                                       ? 'Ditolak (Cek)'
                                       : 'Mulai Berjualan',
                               style: TextStyle(
-                                fontSize: 10,
+                                fontSize: 9.5,
                                 fontWeight: FontWeight.w700,
                                 color: user.verificationStatus == StoreVerificationStatus.pending
                                     ? const Color(0xFFFFA000)
@@ -250,7 +254,7 @@ class AppSidebar extends StatelessWidget {
                         onTap: () => _openLoginModal(context),
                         borderRadius: BorderRadius.circular(6),
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2.5),
                           decoration: BoxDecoration(
                             color: AppColors.primaryLight,
                             borderRadius: BorderRadius.circular(6),
@@ -258,7 +262,7 @@ class AppSidebar extends StatelessWidget {
                           child: const Text(
                             'Masuk Akun',
                             style: TextStyle(
-                              fontSize: 10,
+                              fontSize: 9.5,
                               fontWeight: FontWeight.w700,
                               color: AppColors.primary,
                             ),
@@ -311,7 +315,7 @@ class AppSidebar extends StatelessWidget {
             ),
           ),
 
-          // Navigation Links
+          // Navigation Links (Chat & Promosi temporarily disabled from UI)
           Expanded(
             child: ListView(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
@@ -319,15 +323,15 @@ class AppSidebar extends StatelessWidget {
                   ? [
                       _buildNavItem(
                         index: 0,
-                        icon: Icons.dashboard_outlined,
-                        activeIcon: Icons.dashboard_rounded,
-                        label: 'Beranda Discovery',
+                        icon: Icons.storefront_outlined,
+                        activeIcon: Icons.storefront_rounded,
+                        label: 'Toko & Danusan',
                       ),
                       _buildNavItem(
                         index: 1,
-                        icon: Icons.search_rounded,
-                        activeIcon: Icons.manage_search_rounded,
-                        label: 'Jelajah Katalog',
+                        icon: Icons.restaurant_menu_rounded,
+                        activeIcon: Icons.restaurant_rounded,
+                        label: 'Katalog Semua Menu',
                       ),
                       _buildNavItem(
                         index: 2,
@@ -340,14 +344,6 @@ class AppSidebar extends StatelessWidget {
                       ),
                       _buildNavItem(
                         index: 3,
-                        icon: Icons.chat_bubble_outline_rounded,
-                        activeIcon: Icons.chat_bubble_rounded,
-                        label: 'Chat & Diskusi',
-                        requiresAuth: true,
-                        authMessage: 'Masuk ke akun Luwe kamu untuk berkirim pesan dengan pemilik stan makanan.',
-                      ),
-                      _buildNavItem(
-                        index: 4,
                         icon: Icons.person_outline_rounded,
                         activeIcon: Icons.person_rounded,
                         label: 'Profil Akun',
@@ -365,21 +361,15 @@ class AppSidebar extends StatelessWidget {
                         icon: Icons.restaurant_menu_outlined,
                         activeIcon: Icons.restaurant_menu_rounded,
                         label: 'Kelola Menu & Stok',
-                        badge: '${state.allRawMenuItems.length}',
+                        badge: '${state.sellerMenuItems.length}',
                       ),
                       _buildNavItem(
                         index: 2,
                         icon: Icons.shopping_bag_outlined,
                         activeIcon: Icons.shopping_bag_rounded,
                         label: 'Pesanan Masuk',
-                        badge: '1 Baru',
-                        badgeColor: AppColors.primary,
-                      ),
-                      _buildNavItem(
-                        index: 3,
-                        icon: Icons.campaign_outlined,
-                        activeIcon: Icons.campaign_rounded,
-                        label: 'Kelola Promosi',
+                        badge: state.activeSellerOrders.isNotEmpty ? '${state.activeSellerOrders.length} Baru' : '0',
+                        badgeColor: state.activeSellerOrders.isNotEmpty ? AppColors.primary : const Color(0xFF94A3B8),
                       ),
                     ],
             ),

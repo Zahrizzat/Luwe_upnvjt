@@ -27,6 +27,10 @@ class UserModel {
   final StoreVerificationStatus verificationStatus;
   final String? rejectionReason;
   final String userType; // 'mahasiswa', 'karyawan', 'dosen'
+  final String bankName;
+  final String bankAccountNumber;
+  final String bankAccountHolder;
+  final bool isBankAccountVerified;
 
   const UserModel({
     required this.id,
@@ -48,10 +52,22 @@ class UserModel {
     this.verificationStatus = StoreVerificationStatus.none,
     this.rejectionReason,
     this.userType = 'mahasiswa',
+    this.bankName = 'Bank BCA',
+    this.bankAccountNumber = '8291039482',
+    this.bankAccountHolder = '',
+    this.isBankAccountVerified = true,
   });
 
   bool get isGuest => id == 'guest';
   bool get isSellerApproved => verificationStatus == StoreVerificationStatus.approved;
+
+  String get maskedBankAccountNumber {
+    final clean = bankAccountNumber.trim();
+    if (clean.isEmpty) return '-';
+    if (clean.length <= 4) return clean;
+    final last4 = clean.substring(clean.length - 4);
+    return '•••• •••• $last4';
+  }
 
   static const guest = UserModel(
     id: 'guest',
@@ -65,6 +81,10 @@ class UserModel {
     avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=400&q=80',
     verificationStatus: StoreVerificationStatus.none,
     userType: 'mahasiswa',
+    bankName: '',
+    bankAccountNumber: '',
+    bankAccountHolder: '',
+    isBankAccountVerified: false,
   );
 
   UserModel copyWith({
@@ -87,6 +107,10 @@ class UserModel {
     StoreVerificationStatus? verificationStatus,
     String? rejectionReason,
     String? userType,
+    String? bankName,
+    String? bankAccountNumber,
+    String? bankAccountHolder,
+    bool? isBankAccountVerified,
   }) {
     return UserModel(
       id: id ?? this.id,
@@ -108,6 +132,10 @@ class UserModel {
       verificationStatus: verificationStatus ?? this.verificationStatus,
       rejectionReason: rejectionReason ?? this.rejectionReason,
       userType: userType ?? this.userType,
+      bankName: bankName ?? this.bankName,
+      bankAccountNumber: bankAccountNumber ?? this.bankAccountNumber,
+      bankAccountHolder: bankAccountHolder ?? this.bankAccountHolder,
+      isBankAccountVerified: isBankAccountVerified ?? this.isBankAccountVerified,
     );
   }
 }

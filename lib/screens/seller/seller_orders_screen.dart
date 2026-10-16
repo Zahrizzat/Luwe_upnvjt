@@ -177,14 +177,14 @@ class _SellerOrdersScreenState extends State<SellerOrdersScreen> {
                           ),
                           Text(
                             order.paymentMethod == PaymentMethod.qris
-                                ? 'QRIS: Lunas'
-                                : 'Tunai: Siapkan Kembalian',
+                                ? 'QRIS: ${order.paymentStatus}'
+                                : 'Tunai: ${order.paymentStatus}',
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w700,
                               color: order.paymentMethod == PaymentMethod.qris
-                                  ? AppColors.secondary
-                                  : AppColors.tertiary,
+                                  ? const Color(0xFF0284C7)
+                                  : AppColors.secondary,
                             ),
                           ),
                         ],
@@ -207,6 +207,65 @@ class _SellerOrdersScreenState extends State<SellerOrdersScreen> {
                         ),
                       );
                     }),
+
+                    // Transparent Financial Snapshot for Seller
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppColors.canvas,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: AppColors.surfaceBorder),
+                      ),
+                      child: Column(
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text('Subtotal Menu:', style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+                              Text('Rp ${order.subtotal}', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700)),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text('Biaya Layanan LuWe!:', style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+                              Text('Rp ${order.campusServiceFee}', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700)),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text('Biaya Pengantaran:', style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+                              Text(
+                                order.deliveryFee == 0 ? 'Gratis (Rp 0)' : 'Rp ${order.deliveryFee}',
+                                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
+                              ),
+                            ],
+                          ),
+                          if (order.discount > 0) ...[
+                            const SizedBox(height: 4),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text('Diskon Voucher (${order.voucherCode ?? "UPN"}):', style: const TextStyle(fontSize: 11, color: AppColors.secondaryDark, fontWeight: FontWeight.w700)),
+                                Text('-Rp ${order.discount}', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: AppColors.secondaryDark)),
+                              ],
+                            ),
+                          ],
+                          const Divider(height: 12),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text('Total Transaksi Pembeli:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800)),
+                              Text('Rp ${order.totalAmount}', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: AppColors.primary)),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
                     if (order.notes != null && order.notes!.isNotEmpty) ...[
                       const SizedBox(height: 6),
                       Container(

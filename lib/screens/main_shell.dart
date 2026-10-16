@@ -9,13 +9,11 @@ import '../widgets/cart_drawer.dart';
 import 'buyer/discovery_screen.dart';
 import 'buyer/explore_screen.dart';
 import 'buyer/orders_screen.dart';
-import 'buyer/chat_screen.dart';
 import 'buyer/profile_screen.dart';
 
 import 'seller/seller_dashboard_screen.dart';
 import 'seller/seller_menu_screen.dart';
 import 'seller/seller_orders_screen.dart';
-import 'seller/seller_promos_screen.dart';
 
 class MainShell extends StatefulWidget {
   final AppState state;
@@ -47,9 +45,6 @@ class _MainShellState extends State<MainShell> {
           currentBody = OrdersScreen(state: state);
           break;
         case 3:
-          currentBody = ChatScreen(state: state);
-          break;
-        case 4:
           currentBody = ProfileScreen(state: state);
           break;
         default:
@@ -65,9 +60,6 @@ class _MainShellState extends State<MainShell> {
           break;
         case 2:
           currentBody = SellerOrdersScreen(state: state);
-          break;
-        case 3:
-          currentBody = SellerPromosScreen(state: state);
           break;
         default:
           currentBody = SellerDashboardScreen(state: state);

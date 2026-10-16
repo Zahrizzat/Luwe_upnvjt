@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import '../constants/app_colors.dart';
+import '../constants/app_config.dart';
 import '../models/order_model.dart';
 import '../providers/app_state.dart';
 import 'auth_guard_dialog.dart';
-import 'qris_dialog.dart';
+import 'order_confirmation_dialog.dart';
 
 class CartDrawer extends StatefulWidget {
   final AppState state;
@@ -20,11 +21,13 @@ class _CartDrawerState extends State<CartDrawer> {
   final TextEditingController _destinationController =
       TextEditingController(text: 'Kantin Giri Reksa');
   final TextEditingController _notesController = TextEditingController();
+  final TextEditingController _voucherController = TextEditingController();
 
   @override
   void dispose() {
     _destinationController.dispose();
     _notesController.dispose();
+    _voucherController.dispose();
     super.dispose();
   }
 
@@ -138,6 +141,19 @@ class _CartDrawerState extends State<CartDrawer> {
                                         cartItem.selectedSpiceLevel,
                                         style: const TextStyle(fontSize: 11, color: AppColors.primary, fontWeight: FontWeight.w600),
                                       ),
+                                      if (!state.isItemStoreOpen(cartItem.item))
+                                        Container(
+                                          margin: const EdgeInsets.symmetric(vertical: 2),
+                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFFDC2626),
+                                            borderRadius: BorderRadius.circular(4),
+                                          ),
+                                          child: const Text(
+                                            'Toko Tutup',
+                                            style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w800),
+                                          ),
+                                        ),
                                       const SizedBox(height: 4),
                                       Text(
                                         'Rp ${cartItem.item.price} x ${cartItem.quantity} = Rp ${cartItem.subtotal}',
@@ -192,7 +208,7 @@ class _CartDrawerState extends State<CartDrawer> {
                                   children: [
                                     Icon(Icons.storefront_rounded, size: 16),
                                     SizedBox(width: 6),
-                                    Text('Ambil di Kantin'),
+                                    Text('Ambil di Stan (Rp 0)'),
                                   ],
                                 ),
                                 selected: _deliveryMethod == DeliveryMethod.pickup,
@@ -222,7 +238,7 @@ class _CartDrawerState extends State<CartDrawer> {
                                   children: [
                                     Icon(Icons.delivery_dining_rounded, size: 16),
                                     SizedBox(width: 6),
-                                    Text('Kirim ke Gedung'),
+                                    Text('Antar Gedung (+Rp 2.000)'),
                                   ],
                                 ),
                                 selected: _deliveryMethod == DeliveryMethod.delivery,
@@ -381,7 +397,6 @@ class _CartDrawerState extends State<CartDrawer> {
                             ),
                           ],
                         ),
-
                         const SizedBox(height: 16),
                         // Notes
                         const Text('Catatan Tambahan:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
@@ -393,122 +408,280 @@ class _CartDrawerState extends State<CartDrawer> {
                             hintText: 'Misal: Titipkan di satpam lobi jika sedang ujian...',
                           ),
                         ),
+
+                        const SizedBox(height: 16),
+                        // Voucher Diskon Kampus
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text('Voucher Diskon Kampus:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+                            if (state.appliedDiscount > 0)
+                              Text(
+                                '-Rp ${state.appliedDiscount}',
+                                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: AppColors.secondaryDark),
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        if (state.appliedVoucherCode != null) ...[
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFDCFCE7),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: const Color(0xFF86EFAC)),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Row(
+                                  children: [
+                                    const Icon(Icons.confirmation_num_rounded, size: 16, color: AppColors.secondary),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      '${state.appliedVoucherCode} (Hemat Rp ${state.appliedDiscount})',
+                                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: AppColors.secondaryDark),
+                                    ),
+                                  ],
+                                ),
+                                InkWell(
+                                  onTap: () => state.removeVoucher(),
+                                  child: const Icon(Icons.close_rounded, size: 16, color: AppColors.secondaryDark),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                        ] else ...[
+                          Row(
+                            children: [
+                              Expanded(
+                                child: TextField(
+                                  controller: _voucherController,
+                                  textCapitalization: TextCapitalization.characters,
+                                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+                                  decoration: const InputDecoration(
+                                    hintText: 'Kode voucher (cth: UPNDIES50)',
+                                    prefixIcon: Icon(Icons.local_offer_outlined, size: 16, color: AppColors.textMuted),
+                                    contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              ElevatedButton(
+                                onPressed: () {
+                                  final err = state.applyVoucher(_voucherController.text);
+                                  if (err != null) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(err),
+                                        backgroundColor: AppColors.error,
+                                        behavior: SnackBarBehavior.floating,
+                                      ),
+                                    );
+                                  } else {
+                                    _voucherController.clear();
+                                  }
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.secondary,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                                ),
+                                child: const Text('Pakai', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800)),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+                          SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: Row(
+                              children: AppConfig.validVouchers.entries.map((e) {
+                                return Padding(
+                                  padding: const EdgeInsets.only(right: 6),
+                                  child: ActionChip(
+                                    label: Text('${e.key} (-Rp ${e.value ~/ 1000}rb)'),
+                                    onPressed: () => state.applyVoucher(e.key),
+                                    backgroundColor: const Color(0xFFF1F5F9),
+                                    side: const BorderSide(color: AppColors.surfaceBorder),
+                                    labelStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: AppColors.textSecondary),
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                          ),
+                        ],
                       ],
                     ),
             ),
 
             // Footer / Checkout Summary
             if (items.isNotEmpty)
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: const BoxDecoration(
-                  color: AppColors.canvas,
-                  border: Border(
-                    top: BorderSide(color: AppColors.surfaceBorder, width: 1),
-                  ),
-                ),
-                child: Column(
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text('Subtotal Pesanan:', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-                        Text('Rp ${state.cartSubtotal}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text('Biaya Layanan Kampus:', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-                        Text('Rp ${state.campusServiceFee}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
-                      ],
-                    ),
-                    const Divider(height: 16),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text('Total Pembayaran:', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800)),
-                        Text(
-                          'Rp ${state.cartTotal}',
-                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: AppColors.primary),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: () {
-                          if (!state.isLoggedIn) {
-                            AuthGuardDialog.requireAuth(
-                              context,
-                              state,
-                              message: 'Masuk ke akun Luwe kamu untuk menyelesaikan dan memproses pesanan.',
-                              onAuthenticated: () {
-                                final newOrder = state.placeOrder(
-                                  deliveryMethod: _deliveryMethod,
-                                  destinationLocation: _destinationController.text,
-                                  paymentMethod: _paymentMethod,
-                                  notes: _notesController.text,
-                                );
-                                Navigator.pop(context);
+              Builder(
+                builder: (context) {
+                  final subtotal = state.cartSubtotal;
+                  final serviceFee = state.campusServiceFee;
+                  final deliveryFee = state.getDeliveryFee(_deliveryMethod);
+                  final discount = state.appliedDiscount;
+                  final total = state.calculateCartTotal(deliveryMethod: _deliveryMethod);
+                  final closedItems = items.where((ci) => !state.isItemStoreOpen(ci.item)).toList();
+                  final hasClosedStoreItems = closedItems.isNotEmpty;
 
-                                if (_paymentMethod == PaymentMethod.qris) {
-                                  showDialog(
-                                    context: context,
-                                    builder: (ctx) => QrisPaymentDialog(order: newOrder, state: state),
-                                  );
-                                } else {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text('Pesanan Berhasil Dibuat: ${newOrder.id}! Siapkan uang pas saat terima.'),
-                                      backgroundColor: AppColors.secondary,
-                                      behavior: SnackBarBehavior.floating,
-                                    ),
-                                  );
-                                }
-                              },
-                            );
-                            return;
-                          }
-
-                          final newOrder = state.placeOrder(
-                            deliveryMethod: _deliveryMethod,
-                            destinationLocation: _destinationController.text,
-                            paymentMethod: _paymentMethod,
-                            notes: _notesController.text,
-                          );
-                          Navigator.pop(context);
-
-                          if (_paymentMethod == PaymentMethod.qris) {
-                            showDialog(
-                              context: context,
-                              builder: (ctx) => QrisPaymentDialog(order: newOrder, state: state),
-                            );
-                          } else {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('Pesanan Berhasil Dibuat: ${newOrder.id}! Siapkan uang pas saat terima.'),
-                                backgroundColor: AppColors.secondary,
-                                behavior: SnackBarBehavior.floating,
-                              ),
-                            );
-                          }
-                        },
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
+                  void executeCheckout() {
+                    if (hasClosedStoreItems) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Tidak dapat checkout karena ada menu dari toko yang sedang tutup.'),
+                          backgroundColor: Color(0xFFDC2626),
+                          behavior: SnackBarBehavior.floating,
                         ),
-                        child: Text(
-                          _paymentMethod == PaymentMethod.qris
-                              ? 'Lanjut ke QRIS (Rp ${state.cartTotal})'
-                              : 'Konfirmasi Pesanan Tunai',
-                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800),
-                        ),
+                      );
+                      return;
+                    }
+                    final newOrder = state.placeOrder(
+                      deliveryMethod: _deliveryMethod,
+                      destinationLocation: _destinationController.text,
+                      paymentMethod: _paymentMethod,
+                      notes: _notesController.text,
+                    );
+                    Navigator.pop(context);
+
+                    showDialog(
+                      context: context,
+                      builder: (ctx) => OrderConfirmationDialog(
+                        order: newOrder,
+                        state: state,
+                      ),
+                    );
+                  }
+
+                  return Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: const BoxDecoration(
+                      color: AppColors.canvas,
+                      border: Border(
+                        top: BorderSide(color: AppColors.surfaceBorder, width: 1),
                       ),
                     ),
-                  ],
-                ),
+                    child: Column(
+                      children: [
+                        if (hasClosedStoreItems) ...[
+                          Container(
+                            margin: const EdgeInsets.only(bottom: 12),
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFEF2F2),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: const Color(0xFFFCA5A5)),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.warning_amber_rounded, color: Color(0xFFDC2626), size: 20),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    'Menu ${closedItems.map((c) => "\"${c.item.name}\"").join(", ")} berasal dari toko yang sedang tutup. Harap hapus item tersebut untuk melanjutkan pesanan.',
+                                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF991B1B)),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text('Subtotal Produk:', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                            Text('Rp $subtotal', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text('Biaya Layanan LuWe!:', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                            Text('Rp $serviceFee', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text('Biaya Pengantaran:', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                            Text(
+                              _deliveryMethod == DeliveryMethod.pickup
+                                  ? 'Gratis (Rp 0)'
+                                  : 'Rp $deliveryFee',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                color: _deliveryMethod == DeliveryMethod.pickup ? AppColors.secondaryDark : AppColors.textPrimary,
+                              ),
+                            ),
+                          ],
+                        ),
+                        if (discount > 0) ...[
+                          const SizedBox(height: 6),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'Diskon Voucher (${state.appliedVoucherCode}):',
+                                style: const TextStyle(fontSize: 12, color: AppColors.secondaryDark, fontWeight: FontWeight.w700),
+                              ),
+                              Text(
+                                '-Rp $discount',
+                                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: AppColors.secondaryDark),
+                              ),
+                            ],
+                          ),
+                        ],
+                        const Divider(height: 16),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text('Total Pembayaran:', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800)),
+                            Text(
+                              'Rp $total',
+                              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: AppColors.primary),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: hasClosedStoreItems
+                                ? null
+                                : () {
+                                    if (!state.isLoggedIn) {
+                                      AuthGuardDialog.requireAuth(
+                                        context,
+                                        state,
+                                        message: 'Masuk ke akun Luwe kamu untuk menyelesaikan dan memproses pesanan.',
+                                        onAuthenticated: executeCheckout,
+                                      );
+                                      return;
+                                    }
+                                    executeCheckout();
+                                  },
+                            style: ElevatedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                            ),
+                            child: Text(
+                              hasClosedStoreItems
+                                  ? 'Toko Penjual Sedang Tutup'
+                                  : (_paymentMethod == PaymentMethod.qris
+                                      ? 'Lanjut ke QRIS (Rp $total)'
+                                      : 'Konfirmasi Pesanan Tunai (Rp $total)'),
+                              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
               ),
           ],
         ),

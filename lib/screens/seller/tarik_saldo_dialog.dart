@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../constants/app_colors.dart';
+import '../../constants/app_config.dart';
 import '../../models/withdrawal_model.dart';
 import '../../providers/app_state.dart';
 
@@ -16,41 +17,36 @@ class _TarikSaldoDialogState extends State<TarikSaldoDialog> with SingleTickerPr
   late TabController _tabController;
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _amountController = TextEditingController();
-  final TextEditingController _accountNameController = TextEditingController();
-  final TextEditingController _accountNumberController = TextEditingController();
   final TextEditingController _notesController = TextEditingController();
-
-  String _selectedMethod = 'Bank BCA';
-  final List<String> _paymentMethods = [
-    'Bank BCA',
-    'Bank Mandiri',
-    'Bank BRI',
-    'Bank BNI',
-    'Bank Jatim',
-    'GoPay',
-    'OVO',
-    'DANA',
-    'ShopeePay',
-  ];
 
   bool _isConfirmed = false;
   String? _errorMessage;
   String? _successMessage;
 
+  int _currentGross = 0;
+
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
-    _accountNameController.text = widget.state.currentUser.name;
     widget.state.refreshSellerFinancials();
+    _amountController.addListener(_onAmountChanged);
+  }
+
+  void _onAmountChanged() {
+    final val = int.tryParse(_amountController.text.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
+    if (val != _currentGross) {
+      setState(() {
+        _currentGross = val;
+      });
+    }
   }
 
   @override
   void dispose() {
+    _amountController.removeListener(_onAmountChanged);
     _tabController.dispose();
     _amountController.dispose();
-    _accountNameController.dispose();
-    _accountNumberController.dispose();
     _notesController.dispose();
     super.dispose();
   }
@@ -78,11 +74,11 @@ class _TarikSaldoDialogState extends State<TarikSaldoDialog> with SingleTickerPr
 
     if (!_formKey.currentState!.validate()) return;
     if (!_isConfirmed) {
-      setState(() => _errorMessage = 'Harap centang konfirmasi kebenaran data rekening penerima.');
+      setState(() => _errorMessage = 'Harap centang konfirmasi penarikan dana ke rekening terverifikasi.');
       return;
     }
 
-    final amount = int.tryParse(_amountController.text.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
+    final amount = _currentGross;
     if (amount <= 0) {
       setState(() => _errorMessage = 'Nominal penarikan harus berupa angka positif.');
       return;
@@ -98,27 +94,132 @@ class _TarikSaldoDialogState extends State<TarikSaldoDialog> with SingleTickerPr
       return;
     }
 
+    final user = widget.state.currentUser;
     final error = await widget.state.requestWithdrawal(
       amount: amount,
-      paymentMethod: _selectedMethod,
-      accountName: _accountNameController.text.trim(),
-      accountNumber: _accountNumberController.text.trim(),
+      paymentMethod: user.bankName,
+      accountName: user.bankAccountHolder,
+      accountNumber: user.bankAccountNumber,
       notes: _notesController.text.trim(),
     );
 
     if (mounted) {
       if (error == null) {
+        final net = AppConfig.calculateNetWithdrawal(amount);
         setState(() {
-          _successMessage = 'Pengajuan penarikan sebesar ${_formatRupiah(amount)} berhasil dikirim dan berstatus Menunggu Diproses.';
+          _successMessage = 'Pengajuan penarikan sebesar ${_formatRupiah(amount)} (Bersih ${_formatRupiah(net)}) berhasil dikirim. Status saat ini: Menunggu Verifikasi.';
           _amountController.clear();
           _notesController.clear();
           _isConfirmed = false;
         });
-        _tabController.animateTo(1); // pindah ke riwayat
+        _tabController.animateTo(1); // pindah ke tab riwayat
       } else {
         setState(() => _errorMessage = error);
       }
     }
+  }
+
+  void _showEditBankAccountModal(BuildContext context) {
+    final user = widget.state.currentUser;
+    final bankCtrl = TextEditingController(text: user.bankName.isNotEmpty ? user.bankName : 'Bank BCA');
+    final accNumCtrl = TextEditingController(text: user.bankAccountNumber);
+    final accHolderCtrl = TextEditingController(text: user.bankAccountHolder.isNotEmpty ? user.bankAccountHolder : user.name);
+    final modalFormKey = GlobalKey<FormState>();
+
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Row(
+            children: [
+              Icon(Icons.account_balance_rounded, color: AppColors.primary, size: 22),
+              SizedBox(width: 10),
+              Text('Ubah Rekening Pencairan', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
+            ],
+          ),
+          content: Form(
+            key: modalFormKey,
+            child: SizedBox(
+              width: 420,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Perubahan rekening bank memerlukan verifikasi identitas pemilik stan kuliner kampus.',
+                    style: TextStyle(fontSize: 12, color: AppColors.textMuted),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text('Nama Bank / E-Wallet', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+                  const SizedBox(height: 6),
+                  TextFormField(
+                    controller: bankCtrl,
+                    decoration: InputDecoration(
+                      hintText: 'Contoh: Bank BCA / Bank Jatim / Mandiri',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    ),
+                    validator: (v) => v == null || v.trim().isEmpty ? 'Nama bank tidak boleh kosong' : null,
+                  ),
+                  const SizedBox(height: 12),
+                  const Text('Nomor Rekening', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+                  const SizedBox(height: 6),
+                  TextFormField(
+                    controller: accNumCtrl,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      hintText: 'Contoh: 8291039482',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    ),
+                    validator: (v) => v == null || v.trim().isEmpty ? 'Nomor rekening tidak boleh kosong' : null,
+                  ),
+                  const SizedBox(height: 12),
+                  const Text('Nama Pemilik Rekening', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+                  const SizedBox(height: 6),
+                  TextFormField(
+                    controller: accHolderCtrl,
+                    decoration: InputDecoration(
+                      hintText: 'Harus sesuai identitas verifikasi toko',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    ),
+                    validator: (v) => v == null || v.trim().isEmpty ? 'Nama pemilik rekening wajib diisi' : null,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('Batal'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                if (!modalFormKey.currentState!.validate()) return;
+                await widget.state.updateStoreBankAccount(
+                  bankName: bankCtrl.text,
+                  accountNumber: accNumCtrl.text,
+                  accountHolder: accHolderCtrl.text,
+                );
+                if (ctx.mounted) {
+                  Navigator.of(ctx).pop();
+                }
+                setState(() {});
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              child: const Text('Simpan & Verifikasi'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -126,15 +227,16 @@ class _TarikSaldoDialogState extends State<TarikSaldoDialog> with SingleTickerPr
     final state = widget.state;
     final available = state.sellerAvailableBalance;
     final pending = state.sellerPendingWithdrawal;
+    final completed = state.sellerCompletedWithdrawal;
     final totalOmset = state.sellerTotalOmset;
     final withdrawals = state.sellerWithdrawals;
 
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       backgroundColor: Colors.white,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 680, maxHeight: 760),
+        constraints: const BoxConstraints(maxWidth: 720, maxHeight: 820),
         child: Column(
           children: [
             // Modal Header
@@ -159,7 +261,7 @@ class _TarikSaldoDialogState extends State<TarikSaldoDialog> with SingleTickerPr
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text(
-                          'Kelola Saldo & Penarikan Stan',
+                          'Tarik Saldo Pendapatan Toko',
                           style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
                         ),
                         Text(
@@ -179,7 +281,7 @@ class _TarikSaldoDialogState extends State<TarikSaldoDialog> with SingleTickerPr
               ),
             ),
 
-            // Financial Summary Banner
+            // Financial Summary Banner (4 Separated Categories)
             Container(
               margin: const EdgeInsets.all(20),
               padding: const EdgeInsets.all(18),
@@ -193,30 +295,30 @@ class _TarikSaldoDialogState extends State<TarikSaldoDialog> with SingleTickerPr
               ),
               child: Row(
                 children: [
+                  // Saldo Tersedia
                   Expanded(
-                    flex: 4,
+                    flex: 3,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text(
                           'SALDO TERSEDIA',
-                          style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Colors.white60, letterSpacing: 0.5),
+                          style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Color(0xFF4ADE80), letterSpacing: 0.5),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           _formatRupiah(available),
-                          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Colors.white),
+                          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Colors.white),
                         ),
                         const SizedBox(height: 2),
-                        const Text(
-                          'Dapat ditarik ke rekening / e-wallet',
-                          style: TextStyle(fontSize: 11, color: Colors.white70),
-                        ),
+                        const Text('Siap diajukan', style: TextStyle(fontSize: 10, color: Colors.white60)),
                       ],
                     ),
                   ),
-                  Container(width: 1, height: 48, color: Colors.white24),
-                  const SizedBox(width: 16),
+                  Container(width: 1, height: 42, color: Colors.white24),
+                  const SizedBox(width: 12),
+
+                  // Sedang Diproses
                   Expanded(
                     flex: 3,
                     child: Column(
@@ -232,10 +334,30 @@ class _TarikSaldoDialogState extends State<TarikSaldoDialog> with SingleTickerPr
                           style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Colors.amberAccent),
                         ),
                         const SizedBox(height: 2),
-                        Text(
-                          'Total Omset: ${_formatRupiah(totalOmset)}',
-                          style: const TextStyle(fontSize: 10, color: Colors.white60),
+                        const Text('Tertahan proses', style: TextStyle(fontSize: 10, color: Colors.white60)),
+                      ],
+                    ),
+                  ),
+                  Container(width: 1, height: 42, color: Colors.white24),
+                  const SizedBox(width: 12),
+
+                  // Total Penarikan Selesai
+                  Expanded(
+                    flex: 3,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'PENARIKAN SELESAI',
+                          style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Color(0xFF38BDF8), letterSpacing: 0.5),
                         ),
+                        const SizedBox(height: 4),
+                        Text(
+                          _formatRupiah(completed),
+                          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Color(0xFF38BDF8)),
+                        ),
+                        const SizedBox(height: 2),
+                        Text('Omzet: ${_formatRupiah(totalOmset)}', style: const TextStyle(fontSize: 10, color: Colors.white60)),
                       ],
                     ),
                   ),
@@ -280,7 +402,13 @@ class _TarikSaldoDialogState extends State<TarikSaldoDialog> with SingleTickerPr
   }
 
   Widget _buildFormTab(BuildContext context, int available) {
-    final isSubmitting = widget.state.isWithdrawalSubmitting;
+    final state = widget.state;
+    final user = state.currentUser;
+    final isSubmitting = state.isWithdrawalSubmitting;
+
+    final taxFee = AppConfig.calculateTaxFee(_currentGross);
+    final adminFee = AppConfig.calculateAdminFee(_currentGross);
+    final netAmount = AppConfig.calculateNetWithdrawal(_currentGross);
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
@@ -329,8 +457,81 @@ class _TarikSaldoDialogState extends State<TarikSaldoDialog> with SingleTickerPr
                 ),
               ),
 
+            // 1. Rekening Tujuan Terverifikasi Card
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.verified_user_rounded, color: Color(0xFF16A34A), size: 18),
+                          const SizedBox(width: 8),
+                          const Text(
+                            'Rekening Tujuan Terverifikasi',
+                            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
+                          ),
+                        ],
+                      ),
+                      TextButton.icon(
+                        onPressed: () => _showEditBankAccountModal(context),
+                        icon: const Icon(Icons.edit_rounded, size: 14),
+                        label: const Text('Ubah Rekening', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: AppColors.surfaceBorder),
+                        ),
+                        child: Text(
+                          user.bankName.isNotEmpty ? user.bankName : 'Bank BCA',
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: AppColors.primary),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            user.maskedBankAccountNumber,
+                            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: AppColors.textPrimary, letterSpacing: 1),
+                          ),
+                          Text(
+                            'a.n. ${user.bankAccountHolder.isNotEmpty ? user.bankAccountHolder : user.name}',
+                            style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Pencairan akan langsung ditransfer ke rekening di atas tanpa perlu memasukkan ulang nomor rekening.',
+                    style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 18),
+
+            // 2. Nominal Penarikan Bruto
             const Text(
-              'Nominal Penarikan Saldo',
+              'Nominal Penarikan (Bruto)',
               style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
             ),
             const SizedBox(height: 6),
@@ -339,7 +540,7 @@ class _TarikSaldoDialogState extends State<TarikSaldoDialog> with SingleTickerPr
               keyboardType: TextInputType.number,
               decoration: InputDecoration(
                 prefixText: 'Rp ',
-                hintText: 'Minimal 10.000',
+                hintText: 'Minimal Rp 10.000',
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                 contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               ),
@@ -353,7 +554,7 @@ class _TarikSaldoDialogState extends State<TarikSaldoDialog> with SingleTickerPr
             ),
             const SizedBox(height: 8),
 
-            // Quick nominal chips
+            // Quick chips
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
@@ -365,75 +566,146 @@ class _TarikSaldoDialogState extends State<TarikSaldoDialog> with SingleTickerPr
                 ],
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 18),
 
-            // Bank / E-Wallet Selection
-            const Text(
-              'Metode / Rekening Tujuan',
-              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
-            ),
-            const SizedBox(height: 6),
-            DropdownButtonFormField<String>(
-              initialValue: _selectedMethod,
-              decoration: InputDecoration(
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            // 3. Ringkasan Perhitungan Penarikan Bersih & Potongan
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF1F5F9),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: const Color(0xFFCBD5E1)),
               ),
-              items: _paymentMethods.map((m) {
-                return DropdownMenuItem(value: m, child: Text(m, style: const TextStyle(fontSize: 13)));
-              }).toList(),
-              onChanged: (val) {
-                if (val != null) setState(() => _selectedMethod = val);
-              },
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Row(
+                    children: [
+                      Icon(Icons.calculate_rounded, size: 16, color: AppColors.primary),
+                      SizedBox(width: 6),
+                      Text('Ringkasan Perhitungan & Rincian Potongan', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: AppColors.textPrimary)),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('Nominal Penarikan Bruto', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                      Text(_formatRupiah(_currentGross), style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          const Text('Potongan Pajak Resmi', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(4),
+                              border: Border.all(color: AppColors.surfaceBorder),
+                            ),
+                            child: Text(
+                              AppConfig.withdrawalTaxStatus,
+                              style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w600, color: AppColors.textMuted),
+                            ),
+                          ),
+                        ],
+                      ),
+                      Text(
+                        taxFee > 0 ? '- ${_formatRupiah(taxFee)}' : 'Rp 0',
+                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: taxFee > 0 ? AppColors.error : AppColors.textSecondary),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          const Text('Biaya Administrasi Bank', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(4),
+                              border: Border.all(color: AppColors.surfaceBorder),
+                            ),
+                            child: Text(
+                              AppConfig.withdrawalAdminStatus,
+                              style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w600, color: AppColors.textMuted),
+                            ),
+                          ),
+                        ],
+                      ),
+                      Text(
+                        adminFee > 0 ? '- ${_formatRupiah(adminFee)}' : 'Rp 0',
+                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: adminFee > 0 ? AppColors.error : AppColors.textSecondary),
+                      ),
+                    ],
+                  ),
+                  const Divider(height: 20),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Estimasi Jumlah Bersih Diterima', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: AppColors.textPrimary)),
+                          Text('Nominal Bruto - Potongan Berlaku', style: TextStyle(fontSize: 10, color: AppColors.textMuted)),
+                        ],
+                      ),
+                      Text(
+                        _formatRupiah(netAmount),
+                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFF16A34A)),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 14),
 
-            // Account Name
-            const Text(
-              'Nama Pemilik Rekening / Akun',
-              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
-            ),
-            const SizedBox(height: 6),
-            TextFormField(
-              controller: _accountNameController,
-              decoration: InputDecoration(
-                hintText: 'Sesuai buku tabungan / aplikasi e-wallet',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            // 4. Estimasi Waktu Proses Notice
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFEFF6FF),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: const Color(0xFFBFDBFE)),
               ),
-              validator: (v) => v == null || v.trim().isEmpty ? 'Masukkan nama pemilik rekening' : null,
-            ),
-            const SizedBox(height: 14),
-
-            // Account Number
-            const Text(
-              'Nomor Rekening / No. HP E-Wallet',
-              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
-            ),
-            const SizedBox(height: 6),
-            TextFormField(
-              controller: _accountNumberController,
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(
-                hintText: 'Contoh: 1234567890 atau 081234567890',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: const Row(
+                children: [
+                  Icon(Icons.info_outline_rounded, color: Color(0xFF2563EB), size: 18),
+                  SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'Estimasi waktu proses verifikasi & pencairan adalah 2–3 hari kerja. Waktu ini merupakan perkiraan operasional pihak kampus, bukan jaminan instan langsung masuk.',
+                      style: TextStyle(fontSize: 11, color: Color(0xFF1E40AF), height: 1.3),
+                    ),
+                  ),
+                ],
               ),
-              validator: (v) => v == null || v.trim().isEmpty ? 'Masukkan nomor rekening atau e-wallet' : null,
             ),
             const SizedBox(height: 14),
 
             // Notes
             const Text(
               'Catatan Tambahan (Opsional)',
-              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
             ),
             const SizedBox(height: 6),
             TextFormField(
               controller: _notesController,
               maxLines: 2,
               decoration: InputDecoration(
-                hintText: 'Keterangan khusus pencairan...',
+                hintText: 'Misal: Pencairan hasil bazar danusan expo fakultas...',
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                 contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               ),
@@ -445,15 +717,15 @@ class _TarikSaldoDialogState extends State<TarikSaldoDialog> with SingleTickerPr
               value: _isConfirmed,
               onChanged: (val) => setState(() => _isConfirmed = val ?? false),
               title: const Text(
-                'Saya telah memeriksa dan memastikan data nomor rekening penerima sudah benar.',
+                'Saya telah memeriksa rincian nominal bruto, potongan biaya yang berlaku, dan rekening penerima sudah benar.',
                 style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textSecondary),
               ),
               controlAffinity: ListTileControlAffinity.leading,
               contentPadding: EdgeInsets.zero,
             ),
-            const SizedBox(height: 18),
+            const SizedBox(height: 16),
 
-            // Submit Button
+            // Submit Button with Debounce Protection
             SizedBox(
               width: double.infinity,
               height: 48,
@@ -489,6 +761,7 @@ class _TarikSaldoDialogState extends State<TarikSaldoDialog> with SingleTickerPr
             ? () {
                 setState(() {
                   _amountController.text = value.toString();
+                  _currentGross = value;
                 });
               }
             : null,
@@ -525,7 +798,7 @@ class _TarikSaldoDialogState extends State<TarikSaldoDialog> with SingleTickerPr
               ),
               const SizedBox(height: 6),
               const Text(
-                'Pengajuan penarikan dana stan kamu akan tercatat secara transparan di sini.',
+                'Pengajuan penarikan dana stan kamu akan tercatat secara transparan dengan audit trail di sini.',
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 12, color: AppColors.textMuted),
               ),
@@ -557,7 +830,7 @@ class _TarikSaldoDialogState extends State<TarikSaldoDialog> with SingleTickerPr
                   Row(
                     children: [
                       Text(
-                        _formatRupiah(item.amount),
+                        _formatRupiah(item.grossAmount),
                         style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
                       ),
                       const SizedBox(width: 8),
@@ -572,59 +845,86 @@ class _TarikSaldoDialogState extends State<TarikSaldoDialog> with SingleTickerPr
               ),
               const SizedBox(height: 8),
               Text(
-                'Penerima: ${item.accountName} (${_maskAccountNumber(item.accountNumber)})',
+                'Rekening Tujuan: ${item.accountName} (${item.maskedAccountNumber})',
                 style: const TextStyle(fontSize: 12, color: AppColors.textPrimary, fontWeight: FontWeight.w600),
               ),
               const SizedBox(height: 4),
+              Row(
+                children: [
+                  Text(
+                    'Pajak: ${_formatRupiah(item.taxFee)} | Admin: ${_formatRupiah(item.adminFee)} | ',
+                    style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
+                  ),
+                  Text(
+                    'Bersih: ${_formatRupiah(item.netAmount)}',
+                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF16A34A)),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
               Text(
-                'Diajukan pada: ${_formatDate(item.requestedAt)}',
+                'Waktu Pengajuan: ${_formatDate(item.requestedAt)} • Estimasi 2–3 hari kerja',
                 style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
               ),
               if (item.rejectionReason != null && item.rejectionReason!.isNotEmpty) ...[
-                const SizedBox(height: 6),
+                const SizedBox(height: 8),
                 Container(
+                  width: double.infinity,
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
                     color: AppColors.errorLight,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
-                    'Alasan Penolakan: ${item.rejectionReason}',
+                    'Alasan Penolakan: ${item.rejectionReason}\n(Saldo tertahan telah dikembalikan otomatis ke Saldo Tersedia)',
                     style: const TextStyle(fontSize: 11, color: AppColors.error, fontWeight: FontWeight.w600),
                   ),
                 ),
               ],
 
-              // Simulator buttons for Demo / Testing if pending
-              if (item.status == WithdrawalStatus.pending) ...[
+              // Simulator buttons for Demo / Testing
+              if (item.status == WithdrawalStatus.waitingVerification || item.status == WithdrawalStatus.processing) ...[
                 const SizedBox(height: 10),
                 const Divider(),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     const Text('Simulasi Admin: ', style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
+                    if (item.status == WithdrawalStatus.waitingVerification)
+                      TextButton.icon(
+                        onPressed: () async {
+                          await widget.state.simulateReviewWithdrawal(
+                            withdrawalId: item.id!,
+                            targetStatus: WithdrawalStatus.processing,
+                          );
+                          setState(() {});
+                        },
+                        icon: const Icon(Icons.sync_rounded, size: 14, color: Color(0xFF0284C7)),
+                        label: const Text('Verifikasi & Proses', style: TextStyle(fontSize: 11, color: Color(0xFF0284C7))),
+                      ),
+                    if (item.status == WithdrawalStatus.processing)
+                      TextButton.icon(
+                        onPressed: () async {
+                          await widget.state.simulateReviewWithdrawal(
+                            withdrawalId: item.id!,
+                            targetStatus: WithdrawalStatus.completed,
+                          );
+                          setState(() {});
+                        },
+                        icon: const Icon(Icons.check_circle_rounded, size: 14, color: AppColors.secondary),
+                        label: const Text('Konfirmasi Pencairan Selesai', style: TextStyle(fontSize: 11, color: AppColors.secondary)),
+                      ),
                     TextButton.icon(
                       onPressed: () async {
                         await widget.state.simulateReviewWithdrawal(
                           withdrawalId: item.id!,
-                          approve: true,
+                          targetStatus: WithdrawalStatus.rejected,
+                          reason: 'Nomor rekening atau identitas pemilik toko tidak cocok.',
                         );
                         setState(() {});
                       },
-                      icon: const Icon(Icons.check, size: 14, color: AppColors.secondary),
-                      label: const Text('Setujui / Transfer', style: TextStyle(fontSize: 11, color: AppColors.secondary)),
-                    ),
-                    TextButton.icon(
-                      onPressed: () async {
-                        await widget.state.simulateReviewWithdrawal(
-                          withdrawalId: item.id!,
-                          approve: false,
-                          reason: 'Nomor rekening dan nama bank tidak sesuai.',
-                        );
-                        setState(() {});
-                      },
-                      icon: const Icon(Icons.close, size: 14, color: AppColors.error),
-                      label: const Text('Tolak & Kembalikan', style: TextStyle(fontSize: 11, color: AppColors.error)),
+                      icon: const Icon(Icons.close_rounded, size: 14, color: AppColors.error),
+                      label: const Text('Tolak & Kembalikan Saldo', style: TextStyle(fontSize: 11, color: AppColors.error)),
                     ),
                   ],
                 ),
@@ -639,28 +939,25 @@ class _TarikSaldoDialogState extends State<TarikSaldoDialog> with SingleTickerPr
   Widget _buildStatusBadge(WithdrawalStatus status) {
     Color bg;
     Color fg;
-    String text;
 
     switch (status) {
+      case WithdrawalStatus.waitingVerification:
       case WithdrawalStatus.pending:
         bg = const Color(0xFFFEF3C7);
         fg = const Color(0xFFD97706);
-        text = 'Menunggu Diproses';
         break;
+      case WithdrawalStatus.processing:
       case WithdrawalStatus.approved:
         bg = const Color(0xFFE0F2FE);
         fg = const Color(0xFF0284C7);
-        text = 'Disetujui';
         break;
       case WithdrawalStatus.completed:
         bg = AppColors.secondaryLight;
         fg = AppColors.secondaryDark;
-        text = 'Selesai Ditransfer';
         break;
       case WithdrawalStatus.rejected:
         bg = AppColors.errorLight;
         fg = AppColors.error;
-        text = 'Ditolak';
         break;
     }
 
@@ -671,15 +968,10 @@ class _TarikSaldoDialogState extends State<TarikSaldoDialog> with SingleTickerPr
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(
-        text,
+        status.label,
         style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: fg),
       ),
     );
-  }
-
-  String _maskAccountNumber(String acc) {
-    if (acc.length <= 4) return acc;
-    return '****${acc.substring(acc.length - 4)}';
   }
 
   String _formatDate(DateTime dt) {

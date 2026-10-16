@@ -78,7 +78,7 @@ class AppTopBar extends StatelessWidget {
               child: TextField(
                 onChanged: (val) => state.setSearchQuery(val),
                 decoration: const InputDecoration(
-                  hintText: 'Cari ayam geprek, es teh poci, kantin FISIP...',
+                  hintText: 'Cari nama toko, danusan, menu makanan, atau kategori...',
                   prefixIcon: Icon(Icons.search_rounded, size: 20, color: AppColors.textMuted),
                   suffixIcon: Padding(
                     padding: EdgeInsets.all(8.0),
@@ -123,14 +123,14 @@ class AppTopBar extends StatelessWidget {
                       color: AppColors.textPrimary,
                     ),
                     items: const [
-                      DropdownMenuItem(value: 'Semua Lokasi', child: Text('Semua Titik UPNVJT')),
-                      DropdownMenuItem(value: 'Kantin Giri Reksa', child: Text('Kantin Giri Reksa')),
-                      DropdownMenuItem(value: 'Gedung FT', child: Text('Gedung FT (Teknik)')),
-                      DropdownMenuItem(value: 'Gedung FEB', child: Text('Gedung FEB (Ekonomi)')),
-                      DropdownMenuItem(value: 'Gedung FAD', child: Text('Gedung FAD (Arsitektur)')),
-                      DropdownMenuItem(value: 'Gedung FISIP', child: Text('Gedung FISIP')),
-                      DropdownMenuItem(value: 'Gedung FIK', child: Text('Gedung FIK (Komputer)')),
-                      DropdownMenuItem(value: 'Gedung FH', child: Text('Gedung FH (Hukum)')),
+                      DropdownMenuItem(value: 'Semua Lokasi', child: Text('Semua Fakultas & Kantin')),
+                      DropdownMenuItem(value: 'FIK', child: Text('Fakultas Ilmu Komputer (FIK)')),
+                      DropdownMenuItem(value: 'FEB', child: Text('Fakultas Ekonomi & Bisnis (FEB)')),
+                      DropdownMenuItem(value: 'FT', child: Text('Fakultas Teknik (FT)')),
+                      DropdownMenuItem(value: 'FISIP', child: Text('Fakultas Ilmu Sosial & Politik (FISIP)')),
+                      DropdownMenuItem(value: 'FAD', child: Text('Fakultas Arsitektur & Desain (FAD)')),
+                      DropdownMenuItem(value: 'Giri Reksa', child: Text('Kantin Giri Reksa')),
+                      DropdownMenuItem(value: 'Santoso', child: Text('Kantin Giri Santoso')),
                     ],
                     onChanged: (val) {
                       if (val != null) state.setSelectedFaculty(val);

@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
+import 'package:flutter/foundation.dart';
 import 'package:mysql_client/mysql_client.dart';
 import '../models/user_model.dart';
 import '../models/menu_item_model.dart';
@@ -9,6 +10,8 @@ import '../models/delivery_location_model.dart';
 import '../models/withdrawal_model.dart';
 import '../models/conversation_model.dart';
 import '../models/chat_message_model.dart';
+import '../models/store_model.dart';
+import '../models/product_rating_model.dart';
 
 class DatabaseService {
   static final DatabaseService _instance = DatabaseService._internal();
@@ -16,8 +19,23 @@ class DatabaseService {
   DatabaseService._internal();
 
   MySQLConnection? _conn;
+  MySQLConnection? get connection => _conn;
   bool _isConnected = false;
   bool get isConnected => _isConnected;
+
+  Future<void> resetTestState() async {
+    if (_conn == null || !_conn!.connected) {
+      final ok = await connect();
+      if (!ok) return;
+    }
+    try {
+      await _conn!.execute("UPDATE users SET role = 'pembeli' WHERE email = 'hafidz@student.upnjatim.ac.id'");
+      await _conn!.execute("DELETE FROM store_withdrawals WHERE seller_id = 2");
+      await _conn!.execute("UPDATE products SET price = 15000, product_name = 'Ayam Geprek Sambal Bawang UPNVJT', stock_quantity = 25, availability = 'tersedia' WHERE product_id = 1");
+      await _conn!.execute("DELETE FROM products WHERE product_name = 'Roti Panggang Khas FEB' OR slug LIKE '%roti-panggang%'");
+      await _conn!.execute("DELETE FROM stores WHERE store_name LIKE '%Tester%' OR store_name LIKE '%Rizky Baru%'");
+    } catch (_) {}
+  }
 
   String hashPassword(String password) {
     final bytes = utf8.encode(password);
@@ -39,6 +57,7 @@ class DatabaseService {
       );
       await _conn!.connect();
       _isConnected = true;
+      await _migrateTables();
       await seedInitialDataIfEmpty();
       return true;
     } catch (_) {
@@ -53,12 +72,110 @@ class DatabaseService {
         );
         await _conn!.connect();
         _isConnected = true;
+        await _migrateTables();
         await seedInitialDataIfEmpty();
         return true;
       } catch (_) {
-        _isConnected = false;
-        return false;
+        try {
+          _conn = await MySQLConnection.createConnection(
+            host: '127.0.0.1',
+            port: 3306,
+            userName: 'root',
+            password: 'root',
+            databaseName: 'luwe_db',
+            secure: false,
+          );
+          await _conn!.connect();
+          _isConnected = true;
+          await _migrateTables();
+          await seedInitialDataIfEmpty();
+          return true;
+        } catch (_) {
+          _isConnected = false;
+          return false;
+        }
       }
+    }
+  }
+
+  Future<void> _migrateTables() async {
+    if (_conn == null || !_conn!.connected) return;
+    try {
+      // 1. Create table store_withdrawals if not exists
+      await _conn!.execute('''
+        CREATE TABLE IF NOT EXISTS store_withdrawals (
+          withdrawal_id INT AUTO_INCREMENT PRIMARY KEY,
+          store_id INT NOT NULL,
+          seller_id INT NOT NULL,
+          amount DECIMAL(12,2) NOT NULL,
+          payment_method VARCHAR(100) NOT NULL,
+          account_name VARCHAR(150) NOT NULL,
+          account_number VARCHAR(100) NOT NULL,
+          notes TEXT,
+          withdrawal_status VARCHAR(50) DEFAULT 'menunggu_verifikasi',
+          requested_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          processed_at TIMESTAMP NULL DEFAULT NULL
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+      ''');
+
+      // 2. Query existing columns in store_withdrawals
+      final colRes = await _conn!.execute(
+        "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'store_withdrawals'",
+      );
+      final existingCols = colRes.rows.map((r) => r.assoc()['COLUMN_NAME']?.toLowerCase() ?? '').toSet();
+
+      if (!existingCols.contains('gross_amount')) {
+        await _conn!.execute('ALTER TABLE store_withdrawals ADD COLUMN gross_amount DECIMAL(12,2) DEFAULT NULL AFTER amount');
+      }
+      if (!existingCols.contains('tax_fee')) {
+        await _conn!.execute('ALTER TABLE store_withdrawals ADD COLUMN tax_fee DECIMAL(12,2) DEFAULT 0 AFTER gross_amount');
+      }
+      if (!existingCols.contains('admin_fee')) {
+        await _conn!.execute('ALTER TABLE store_withdrawals ADD COLUMN admin_fee DECIMAL(12,2) DEFAULT 0 AFTER tax_fee');
+      }
+      if (!existingCols.contains('net_amount')) {
+        await _conn!.execute('ALTER TABLE store_withdrawals ADD COLUMN net_amount DECIMAL(12,2) DEFAULT NULL AFTER admin_fee');
+      }
+      if (!existingCols.contains('tax_status')) {
+        await _conn!.execute("ALTER TABLE store_withdrawals ADD COLUMN tax_status VARCHAR(150) DEFAULT 'Belum dikonfigurasi (Bebas Pajak)'");
+      }
+      if (!existingCols.contains('admin_status')) {
+        await _conn!.execute("ALTER TABLE store_withdrawals ADD COLUMN admin_status VARCHAR(150) DEFAULT 'Belum dikonfigurasi (Bebas Biaya)'");
+      }
+      if (!existingCols.contains('audit_trail')) {
+        await _conn!.execute('ALTER TABLE store_withdrawals ADD COLUMN audit_trail TEXT');
+      }
+      if (!existingCols.contains('rejection_reason')) {
+        await _conn!.execute('ALTER TABLE store_withdrawals ADD COLUMN rejection_reason TEXT');
+      }
+      if (!existingCols.contains('processed_at')) {
+        await _conn!.execute('ALTER TABLE store_withdrawals ADD COLUMN processed_at TIMESTAMP NULL DEFAULT NULL');
+      }
+
+      try {
+        await _conn!.execute("ALTER TABLE store_withdrawals MODIFY COLUMN withdrawal_status VARCHAR(50) NOT NULL DEFAULT 'menunggu_verifikasi'");
+      } catch (_) {}
+      try {
+        await _conn!.execute("DELETE FROM store_withdrawals WHERE withdrawal_status = '' OR withdrawal_status IS NULL");
+      } catch (_) {}
+
+      // 3. Create table product_ratings if not exists
+      await _conn!.execute('''
+        CREATE TABLE IF NOT EXISTS product_ratings (
+          rating_id INT AUTO_INCREMENT PRIMARY KEY,
+          user_id INT NOT NULL,
+          product_id INT NOT NULL,
+          store_id INT NOT NULL,
+          order_code VARCHAR(100) NOT NULL,
+          stars INT NOT NULL,
+          review_text TEXT,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+          UNIQUE KEY uq_user_prod_order (user_id, product_id, order_code)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+      ''');
+    } catch (e) {
+      debugPrint('[DatabaseService Migration Error] $e');
     }
   }
 
@@ -66,6 +183,21 @@ class DatabaseService {
     if (_conn == null || !_conn!.connected) return;
 
     try {
+      await _conn!.execute('''
+        CREATE TABLE IF NOT EXISTS product_ratings (
+          rating_id INT AUTO_INCREMENT PRIMARY KEY,
+          user_id INT NOT NULL,
+          product_id INT NOT NULL,
+          store_id INT NOT NULL,
+          order_code VARCHAR(100) NOT NULL,
+          stars INT NOT NULL,
+          review_text TEXT,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+          UNIQUE KEY uq_user_prod_order (user_id, product_id, order_code)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+      ''');
+
       final userCheck = await _conn!.execute('SELECT COUNT(*) AS total FROM users');
       int userCount = 0;
       for (final row in userCheck.rows) {
@@ -483,9 +615,254 @@ class DatabaseService {
     }
   }
 
-  // Insert product to MySQL (Merchant only)
+  // Fetch products strictly belonging to a specific store from MySQL
+  Future<List<MenuItemModel>> fetchProductsByStore(int storeId) async {
+    if (_conn == null || !_conn!.connected) {
+      final ok = await connect();
+      if (!ok) return [];
+    }
+
+    try {
+      final res = await _conn!.execute(
+        'SELECT p.*, s.store_name, s.store_location, c.category_name, '
+        '(SELECT media_url FROM product_media WHERE product_id = p.product_id AND media_type = "foto" ORDER BY is_primary DESC LIMIT 1) AS image_url '
+        'FROM products p '
+        'JOIN stores s ON p.store_id = s.store_id '
+        'JOIN categories c ON p.category_id = c.category_id '
+        'WHERE p.store_id = :storeId AND p.is_active = 1 '
+        'ORDER BY p.product_id DESC',
+        {'storeId': storeId},
+      );
+
+      final List<MenuItemModel> items = [];
+      for (final row in res.rows) {
+        final a = row.assoc();
+        final pId = a['product_id'] ?? '0';
+        final price = double.tryParse(a['price'] ?? '0')?.toInt() ?? 0;
+        final stock = int.tryParse(a['stock_quantity'] ?? '0') ?? 0;
+        final isAvail = a['availability'] == 'tersedia' && stock > 0;
+        final img = a['image_url'] ?? 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80';
+
+        items.add(
+          MenuItemModel(
+            id: 'menu_$pId',
+            dbProductId: int.tryParse(pId),
+            merchantId: 'store_${a['store_id']}',
+            merchantName: a['store_name'] ?? 'Kantin UPN',
+            merchantLocation: a['store_location'] ?? 'Kantin Kampus',
+            name: a['product_name'] ?? 'Menu Kampus',
+            description: a['description'] ?? '',
+            price: price,
+            imageUrl: img,
+            category: a['category_name'] ?? 'Makanan Utama',
+            isReadyStock: isAvail,
+            stockCount: stock,
+            rating: 4.9,
+            reviewCount: 45,
+            soldCount: 120,
+            tags: const ['Halal', 'UPNVJT Terverifikasi'],
+          ),
+        );
+      }
+      return items;
+    } catch (_) {
+      return [];
+    }
+  }
+
+  // Fetch approved stores from MySQL
+  Future<List<StoreModel>> fetchStores() async {
+    if (_conn == null || !_conn!.connected) {
+      final ok = await connect();
+      if (!ok) return [];
+    }
+
+    try {
+      final res = await _conn!.execute(
+        'SELECT s.*, u.full_name AS seller_name '
+        'FROM stores s '
+        'JOIN users u ON s.seller_id = u.user_id '
+        'WHERE s.verification_status = "disetujui" '
+        'ORDER BY s.store_id ASC',
+      );
+
+      final List<StoreModel> list = [];
+      for (final row in res.rows) {
+        final a = row.assoc();
+        final sId = a['store_id'] ?? '0';
+        final name = a['store_name'] ?? 'Toko Kampus';
+        final loc = a['store_location'] ?? 'Kantin Giri Reksa';
+        final photo = a['store_photo'] ??
+            'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80';
+        final isOpen = (a['store_status'] ?? 'buka') == 'buka';
+        final desc = a['description'] ?? 'Kuliner danusan mahasiswa UPN "Veteran" Jawa Timur.';
+
+        String faculty = 'UPN "Veteran" Jawa Timur';
+        String facultyShort = 'UPNVJT';
+        if (loc.contains('FIK') || name.contains('FIK')) {
+          faculty = 'Fakultas Ilmu Komputer (FIK)';
+          facultyShort = 'FIK';
+        } else if (loc.contains('FEB') || name.contains('FEB')) {
+          faculty = 'Fakultas Ekonomi dan Bisnis (FEB)';
+          facultyShort = 'FEB';
+        } else if (loc.contains('FT') || name.contains('FT') || loc.contains('Teknik')) {
+          faculty = 'Fakultas Teknik (FT)';
+          facultyShort = 'FT';
+        } else if (loc.contains('FISIP') || name.contains('FISIP')) {
+          faculty = 'Fakultas Ilmu Sosial dan Ilmu Politik (FISIP)';
+          facultyShort = 'FISIP';
+        } else if (loc.contains('Giri Reksa')) {
+          faculty = 'Kantin Giri Reksa';
+          facultyShort = 'Giri Reksa';
+        }
+
+        final isDanusan = name.toLowerCase().contains('danusan') || desc.toLowerCase().contains('danusan');
+
+        list.add(
+          StoreModel(
+            id: 'store_$sId',
+            dbStoreId: int.tryParse(sId),
+            sellerId: int.tryParse(a['seller_id'] ?? '0'),
+            name: name,
+            slug: a['slug'] ?? 'store-$sId',
+            description: desc,
+            faculty: faculty,
+            facultyShort: facultyShort,
+            organization: isDanusan ? 'Danusan Mahasiswa $facultyShort' : 'Kantin Kampus UPNVJT',
+            categories: const ['Makanan Utama', 'Minuman Segar', 'Cemilan & Snack', 'Paket Hemat'],
+            location: loc,
+            bannerUrl: photo,
+            logoUrl: photo,
+            rating: 4.9,
+            reviewCount: 65,
+            isOpen: isOpen,
+            deliveryTimeEstimate: '10 - 20 mnt',
+            deliveryLocation: 'Antar ke Selasar/Kelas $facultyShort',
+            isDanusan: isDanusan,
+            isVerified: true,
+          ),
+        );
+      }
+      return list;
+    } catch (_) {
+      return [];
+    }
+  }
+
+  // Submit or update product rating with backend validation
+  Future<String?> submitProductRating({
+    required int userId,
+    required int productId,
+    required int storeId,
+    required String orderCode,
+    required int stars,
+    required String reviewText,
+  }) async {
+    if (_conn == null || !_conn!.connected) return null;
+
+    try {
+      // 1. Data-layer validation: Verify that the user has a completed order for this product
+      final checkOrder = await _conn!.execute(
+        'SELECT o.order_id FROM orders o '
+        'JOIN order_items oi ON o.order_id = oi.order_id '
+        'WHERE o.order_code = :code AND o.buyer_id = :userId AND o.order_status = "selesai" AND oi.product_id = :pId',
+        {'code': orderCode, 'userId': userId, 'pId': productId},
+      );
+
+      if (checkOrder.rows.isEmpty) {
+        return 'Hanya pembeli yang memiliki pesanan selesai untuk produk ini yang berhak memberikan penilaian.';
+      }
+
+      // 2. Ensure table exists
+      await _conn!.execute(
+        'CREATE TABLE IF NOT EXISTS product_ratings ('
+        'rating_id INT AUTO_INCREMENT PRIMARY KEY, '
+        'user_id INT NOT NULL, '
+        'product_id INT NOT NULL, '
+        'store_id INT NOT NULL, '
+        'order_code VARCHAR(64) NOT NULL, '
+        'stars INT NOT NULL, '
+        'review_text TEXT, '
+        'created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, '
+        'updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, '
+        'UNIQUE KEY unique_user_order_product (user_id, order_code, product_id)'
+        ')',
+      );
+
+      // 3. Insert or update
+      await _conn!.execute(
+        'INSERT INTO product_ratings (user_id, product_id, store_id, order_code, stars, review_text) '
+        'VALUES (:userId, :pId, :storeId, :code, :stars, :review) '
+        'ON DUPLICATE KEY UPDATE stars = :stars, review_text = :review, updated_at = CURRENT_TIMESTAMP',
+        {
+          'userId': userId,
+          'pId': productId,
+          'storeId': storeId,
+          'code': orderCode,
+          'stars': stars,
+          'review': reviewText.trim(),
+        },
+      );
+
+      return null;
+    } catch (e) {
+      return 'Gagal menyimpan penilaian ke database: $e';
+    }
+  }
+
+  // Fetch all ratings from MySQL
+  Future<List<ProductRatingModel>> fetchProductRatings() async {
+    if (_conn == null || !_conn!.connected) return [];
+
+    try {
+      final res = await _conn!.execute(
+        'SELECT r.*, u.full_name AS user_name, u.profile_photo AS user_avatar, u.faculty AS user_faculty, '
+        'p.product_name '
+        'FROM product_ratings r '
+        'JOIN users u ON r.user_id = u.user_id '
+        'JOIN products p ON r.product_id = p.product_id '
+        'ORDER BY r.rating_id DESC',
+      );
+
+      final List<ProductRatingModel> list = [];
+      for (final row in res.rows) {
+        final a = row.assoc();
+        final rId = a['rating_id'] ?? '0';
+        final pId = a['product_id'] ?? '0';
+        final sId = a['store_id'] ?? '0';
+        final uId = a['user_id'] ?? '0';
+
+        list.add(
+          ProductRatingModel(
+            id: 'rating_$rId',
+            userId: 'user_$uId',
+            dbUserId: int.tryParse(uId),
+            userName: a['user_name'] ?? 'Mahasiswa UPN',
+            userAvatar: a['user_avatar'],
+            userFaculty: a['user_faculty'] ?? 'UPNVJT',
+            productId: 'menu_$pId',
+            dbProductId: int.tryParse(pId),
+            productName: a['product_name'] ?? 'Menu Kampus',
+            storeId: 'store_$sId',
+            dbStoreId: int.tryParse(sId),
+            orderCode: a['order_code'] ?? '',
+            stars: int.tryParse(a['stars'] ?? '5') ?? 5,
+            reviewText: a['review_text'] ?? '',
+            createdAt: DateTime.tryParse(a['created_at'] ?? '') ?? DateTime.now(),
+            updatedAt: a['updated_at'] != null ? DateTime.tryParse(a['updated_at']!) : null,
+          ),
+        );
+      }
+      return list;
+    } catch (_) {
+      return [];
+    }
+  }
+
+  // Insert product to MySQL (Merchant only with store ownership check)
   Future<MenuItemModel?> addProduct({
     required int storeId,
+    int? sellerId,
     required String name,
     required String categoryName,
     required int price,
@@ -499,6 +876,15 @@ class DatabaseService {
     }
 
     try {
+      // Validate ownership if sellerId is provided
+      if (sellerId != null) {
+        final verifyStore = await _conn!.execute(
+          'SELECT store_id FROM stores WHERE store_id = :storeId AND seller_id = :sellerId',
+          {'storeId': storeId, 'sellerId': sellerId},
+        );
+        if (verifyStore.rows.isEmpty) return null;
+      }
+
       int catId = 1;
       if (categoryName.contains('Minuman')) {
         catId = 3;
@@ -551,15 +937,148 @@ class DatabaseService {
     }
   }
 
-  // Toggle stock availability
-  Future<bool> toggleProductStock(int productId, bool isReady) async {
+  // Update existing product in MySQL with strict store & seller ownership check
+  Future<bool> updateProduct({
+    required int productId,
+    required int storeId,
+    int? sellerId,
+    required String name,
+    required String categoryName,
+    required int price,
+    required String description,
+    required String imageUrl,
+    required int stock,
+    required bool isReadyStock,
+  }) async {
+    if (_conn == null || !_conn!.connected) {
+      final ok = await connect();
+      if (!ok) return false;
+    }
+
+    try {
+      // Validate ownership: product must belong to storeId, and storeId must belong to sellerId if given
+      if (sellerId != null) {
+        final verify = await _conn!.execute(
+          'SELECT p.product_id FROM products p '
+          'JOIN stores s ON p.store_id = s.store_id '
+          'WHERE p.product_id = :pId AND p.store_id = :storeId AND s.seller_id = :sellerId',
+          {'pId': productId, 'storeId': storeId, 'sellerId': sellerId},
+        );
+        if (verify.rows.isEmpty) return false;
+      } else {
+        final verify = await _conn!.execute(
+          'SELECT product_id FROM products WHERE product_id = :pId AND store_id = :storeId',
+          {'pId': productId, 'storeId': storeId},
+        );
+        if (verify.rows.isEmpty) return false;
+      }
+
+      int catId = 1;
+      if (categoryName.contains('Minuman')) {
+        catId = 3;
+      } else if (categoryName.contains('Snack') || categoryName.contains('Cemilan')) {
+        catId = 2;
+      } else if (categoryName.contains('Dessert')) {
+        catId = 4;
+      }
+
+      await _conn!.execute(
+        'UPDATE products SET '
+        'category_id = :catId, '
+        'product_name = :name, '
+        'description = :desc, '
+        'price = :price, '
+        'stock_quantity = :stock, '
+        'availability = :avail '
+        'WHERE product_id = :pId AND store_id = :storeId',
+        {
+          'pId': productId,
+          'storeId': storeId,
+          'catId': catId,
+          'name': name.trim(),
+          'desc': description.trim(),
+          'price': price,
+          'stock': stock,
+          'avail': isReadyStock && stock > 0 ? 'tersedia' : 'tidak_tersedia',
+        },
+      );
+
+      if (imageUrl.trim().isNotEmpty) {
+        await _conn!.execute(
+          'UPDATE product_media SET media_url = :url WHERE product_id = :pId AND is_primary = 1',
+          {'pId': productId, 'url': imageUrl.trim()},
+        );
+      }
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  // Update product stock count with store & seller ownership check
+  Future<bool> updateProductStock(
+    int productId, {
+    required int stockCount,
+    required int storeId,
+    int? sellerId,
+  }) async {
+    if (_conn == null || !_conn!.connected) {
+      final ok = await connect();
+      if (!ok) return false;
+    }
+
+    try {
+      if (sellerId != null) {
+        final verify = await _conn!.execute(
+          'SELECT p.product_id FROM products p '
+          'JOIN stores s ON p.store_id = s.store_id '
+          'WHERE p.product_id = :pId AND p.store_id = :storeId AND s.seller_id = :sellerId',
+          {'pId': productId, 'storeId': storeId, 'sellerId': sellerId},
+        );
+        if (verify.rows.isEmpty) return false;
+      }
+
+      await _conn!.execute(
+        'UPDATE products SET stock_quantity = :stock, availability = :avail WHERE product_id = :pId AND store_id = :storeId',
+        {
+          'stock': stockCount,
+          'avail': stockCount > 0 ? 'tersedia' : 'tidak_tersedia',
+          'pId': productId,
+          'storeId': storeId,
+        },
+      );
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  // Toggle stock availability with optional store/seller ownership check
+  Future<bool> toggleProductStock(
+    int productId,
+    bool isReady, {
+    int? storeId,
+    int? sellerId,
+    int? stockCount,
+  }) async {
     if (_conn == null || !_conn!.connected) return false;
     try {
+      if (storeId != null && sellerId != null) {
+        final verify = await _conn!.execute(
+          'SELECT p.product_id FROM products p '
+          'JOIN stores s ON p.store_id = s.store_id '
+          'WHERE p.product_id = :pId AND p.store_id = :storeId AND s.seller_id = :sellerId',
+          {'pId': productId, 'storeId': storeId, 'sellerId': sellerId},
+        );
+        if (verify.rows.isEmpty) return false;
+      }
+
+      final newStock = stockCount ?? (isReady ? 15 : 0);
       await _conn!.execute(
         'UPDATE products SET availability = :avail, stock_quantity = :stock WHERE product_id = :pId',
         {
           'avail': isReady ? 'tersedia' : 'tidak_tersedia',
-          'stock': isReady ? 15 : 0,
+          'stock': newStock,
           'pId': productId,
         },
       );
@@ -569,10 +1088,24 @@ class DatabaseService {
     }
   }
 
-  // Delete product
-  Future<bool> deleteProduct(int productId) async {
+  // Delete product with store/seller ownership check
+  Future<bool> deleteProduct(
+    int productId, {
+    int? storeId,
+    int? sellerId,
+  }) async {
     if (_conn == null || !_conn!.connected) return false;
     try {
+      if (storeId != null && sellerId != null) {
+        final verify = await _conn!.execute(
+          'SELECT p.product_id FROM products p '
+          'JOIN stores s ON p.store_id = s.store_id '
+          'WHERE p.product_id = :pId AND p.store_id = :storeId AND s.seller_id = :sellerId',
+          {'pId': productId, 'storeId': storeId, 'sellerId': sellerId},
+        );
+        if (verify.rows.isEmpty) return false;
+      }
+
       await _conn!.execute('UPDATE products SET is_active = 0 WHERE product_id = :pId', {'pId': productId});
       return true;
     } catch (_) {
@@ -696,6 +1229,10 @@ class DatabaseService {
   // 1 & 2. SELLER TOTAL OMSET & TARIK SALDO
   // ==========================================
 
+  // ==========================================
+  // 1 & 2. SELLER TOTAL OMSET & TARIK SALDO
+  // ==========================================
+
   Future<Map<String, int>> fetchSellerFinancialSummary(int storeId) async {
     if (_conn == null || !_conn!.connected) {
       final ok = await connect();
@@ -703,34 +1240,47 @@ class DatabaseService {
     }
 
     try {
-      // 1. Total Omset: akumulasi transaksi penjual dengan status transaksi berhasil ('selesai')
-      final omsetRes = await _conn!.execute(
-        'SELECT COALESCE(SUM(total_amount), 0) AS total_omset FROM orders WHERE store_id = :storeId AND order_status = "selesai"',
-        {'storeId': storeId},
-      );
+      // 1. Total Omset: akumulasi transaksi penjual dengan status valid/selesai saja
+      // Menggunakan subtotal dari order selesai
       int totalOmset = 0;
-      for (final r in omsetRes.rows) {
-        totalOmset = double.tryParse(r.assoc()['total_omset'] ?? '0')?.toInt() ?? 0;
+      try {
+        final omsetRes = await _conn!.execute(
+          'SELECT COALESCE(SUM(subtotal), 0) AS total_omset FROM orders WHERE store_id = :storeId AND order_status = "selesai"',
+          {'storeId': storeId},
+        );
+        for (final r in omsetRes.rows) {
+          totalOmset = double.tryParse(r.assoc()['total_omset'] ?? '0')?.toInt() ?? 0;
+        }
+      } catch (_) {
+        final omsetRes = await _conn!.execute(
+          'SELECT COALESCE(SUM(total_amount), 0) AS total_omset FROM orders WHERE store_id = :storeId AND order_status = "selesai"',
+          {'storeId': storeId},
+        );
+        for (final r in omsetRes.rows) {
+          totalOmset = double.tryParse(r.assoc()['total_omset'] ?? '0')?.toInt() ?? 0;
+        }
       }
 
-      // 2. Pending Withdrawals: penarikan berstatus 'menunggu_proses'
+      // 2. Pending / In Process Withdrawals: berstatus 'menunggu_verifikasi', 'diproses', atau 'menunggu_proses'
       final pendingRes = await _conn!.execute(
-        'SELECT COALESCE(SUM(amount), 0) AS pending_total FROM store_withdrawals WHERE store_id = :storeId AND withdrawal_status = "menunggu_proses"',
+        'SELECT COALESCE(SUM(amount), 0) AS pending_total FROM store_withdrawals WHERE store_id = :storeId AND withdrawal_status IN ("menunggu_verifikasi", "diproses", "menunggu_proses")',
         {'storeId': storeId},
       );
       int pendingTotal = 0;
       for (final r in pendingRes.rows) {
-        pendingTotal = double.tryParse(r.assoc()['pending_total'] ?? '0')?.toInt() ?? 0;
+        final val = r.colAt(0) ?? r.assoc()['pending_total'] ?? '0';
+        pendingTotal = double.tryParse(val.toString())?.toInt() ?? 0;
       }
 
-      // 3. Completed/Approved Withdrawals
+      // 3. Completed Withdrawals: berstatus 'selesai' atau 'disetujui'
       final completedRes = await _conn!.execute(
-        'SELECT COALESCE(SUM(amount), 0) AS completed_total FROM store_withdrawals WHERE store_id = :storeId AND withdrawal_status IN ("disetujui", "selesai")',
+        'SELECT COALESCE(SUM(amount), 0) AS completed_total FROM store_withdrawals WHERE store_id = :storeId AND withdrawal_status IN ("selesai", "disetujui")',
         {'storeId': storeId},
       );
       int completedTotal = 0;
       for (final r in completedRes.rows) {
-        completedTotal = double.tryParse(r.assoc()['completed_total'] ?? '0')?.toInt() ?? 0;
+        final val = r.colAt(0) ?? r.assoc()['completed_total'] ?? '0';
+        completedTotal = double.tryParse(val.toString())?.toInt() ?? 0;
       }
 
       // Saldo tersedia = Total Omset - (Pending + Completed)
@@ -766,17 +1316,21 @@ class DatabaseService {
         final sId = int.tryParse(a['store_id'] ?? '0') ?? 0;
         final sellerId = int.tryParse(a['seller_id'] ?? '0') ?? 0;
         final amount = double.tryParse(a['amount'] ?? '0')?.toInt() ?? 0;
-        final stStr = a['withdrawal_status'] ?? 'menunggu_proses';
+        final gross = double.tryParse(a['gross_amount'] ?? '')?.toInt() ?? amount;
+        final tax = double.tryParse(a['tax_fee'] ?? '0')?.toInt() ?? 0;
+        final admin = double.tryParse(a['admin_fee'] ?? '0')?.toInt() ?? 0;
+        final net = double.tryParse(a['net_amount'] ?? '')?.toInt() ?? (gross - tax - admin);
+        final stStr = a['withdrawal_status'] ?? 'menunggu_verifikasi';
 
         WithdrawalStatus st;
-        if (stStr == 'disetujui') {
-          st = WithdrawalStatus.approved;
+        if (stStr == 'diproses') {
+          st = WithdrawalStatus.processing;
         } else if (stStr == 'ditolak') {
           st = WithdrawalStatus.rejected;
-        } else if (stStr == 'selesai') {
+        } else if (stStr == 'selesai' || stStr == 'disetujui') {
           st = WithdrawalStatus.completed;
         } else {
-          st = WithdrawalStatus.pending;
+          st = WithdrawalStatus.waitingVerification;
         }
 
         DateTime reqDate = DateTime.now();
@@ -793,12 +1347,18 @@ class DatabaseService {
             id: wId,
             storeId: sId,
             sellerId: sellerId,
-            amount: amount,
+            grossAmount: gross,
+            taxFee: tax,
+            adminFee: admin,
+            netAmount: net,
             paymentMethod: a['payment_method'] ?? 'Bank BCA',
             accountName: a['account_name'] ?? '',
             accountNumber: a['account_number'] ?? '',
             notes: a['notes'],
             status: st,
+            taxStatus: a['tax_status'] ?? 'Belum dikonfigurasi (Bebas Pajak)',
+            adminStatus: a['admin_status'] ?? 'Belum dikonfigurasi (Bebas Biaya)',
+            auditTrail: a['audit_trail'] != null ? [a['audit_trail']!] : [],
             rejectionReason: a['rejection_reason'],
             requestedAt: reqDate,
             processedAt: procDate,
@@ -814,60 +1374,142 @@ class DatabaseService {
   Future<String?> requestWithdrawal({
     required int storeId,
     required int sellerId,
-    required int amount,
+    required int grossAmount,
+    required int taxFee,
+    required int adminFee,
+    required int netAmount,
     required String paymentMethod,
     required String accountName,
     required String accountNumber,
+    String taxStatus = 'Belum dikonfigurasi (Bebas Pajak)',
+    String adminStatus = 'Belum dikonfigurasi (Bebas Biaya)',
     String? notes,
   }) async {
     if (_conn == null || !_conn!.connected) {
       final ok = await connect();
-      if (!ok) return 'Koneksi database gagal. Silakan coba lagi.';
+      if (!ok) return 'Koneksi database belum terhubung. Silakan coba beberapa saat lagi.';
     }
 
-    if (amount < 10000) {
+    if (grossAmount < 10000) {
       return 'Nominal penarikan minimal Rp10.000.';
     }
 
     try {
       final summary = await fetchSellerFinancialSummary(storeId);
       final available = summary['availableBalance'] ?? 0;
-      if (amount > available) {
-        return 'Saldo tersedia tidak mencukupi (Saldo: Rp$available, Diajukan: Rp$amount).';
+      if (grossAmount > available) {
+        return 'Saldo tersedia tidak mencukupi (Saldo: Rp$available, Diajukan: Rp$grossAmount).';
       }
 
-      await _conn!.execute(
-        'INSERT INTO store_withdrawals (store_id, seller_id, amount, payment_method, account_name, account_number, notes, withdrawal_status, requested_at) '
-        'VALUES (:storeId, :sellerId, :amount, :method, :name, :accNo, :notes, "menunggu_proses", CURRENT_TIMESTAMP)',
-        {
-          'storeId': storeId,
-          'sellerId': sellerId,
-          'amount': amount,
-          'method': paymentMethod,
-          'name': accountName.trim(),
-          'accNo': accountNumber.trim(),
-          'notes': notes?.trim() ?? '',
-        },
-      );
-      return null;
+      final initialAudit = '[${DateTime.now().toIso8601String()}] Pengajuan dibuat oleh penjual (Rp$grossAmount -> Bersih Rp$netAmount). Status: Menunggu Verifikasi';
+
+      try {
+        await _conn!.execute(
+          'INSERT INTO store_withdrawals (store_id, seller_id, amount, gross_amount, tax_fee, admin_fee, net_amount, payment_method, account_name, account_number, notes, withdrawal_status, tax_status, admin_status, audit_trail, requested_at) '
+          'VALUES (:storeId, :sellerId, :amount, :gross, :tax, :admin, :net, :method, :name, :accNo, :notes, "menunggu_verifikasi", :taxSt, :adminSt, :audit, CURRENT_TIMESTAMP)',
+          {
+            'storeId': storeId,
+            'sellerId': sellerId,
+            'amount': grossAmount,
+            'gross': grossAmount,
+            'tax': taxFee,
+            'admin': adminFee,
+            'net': netAmount,
+            'method': paymentMethod,
+            'name': accountName.trim(),
+            'accNo': accountNumber.trim(),
+            'notes': notes?.trim() ?? '',
+            'taxSt': taxStatus,
+            'adminSt': adminStatus,
+            'audit': initialAudit,
+          },
+        );
+        return null;
+      } catch (insertErr) {
+        debugPrint('[DatabaseService] Extended insert failed, running schema migration: $insertErr');
+        await _migrateTables();
+        try {
+          await _conn!.execute(
+            'INSERT INTO store_withdrawals (store_id, seller_id, amount, gross_amount, tax_fee, admin_fee, net_amount, payment_method, account_name, account_number, notes, withdrawal_status, tax_status, admin_status, audit_trail, requested_at) '
+            'VALUES (:storeId, :sellerId, :amount, :gross, :tax, :admin, :net, :method, :name, :accNo, :notes, "menunggu_verifikasi", :taxSt, :adminSt, :audit, CURRENT_TIMESTAMP)',
+            {
+              'storeId': storeId,
+              'sellerId': sellerId,
+              'amount': grossAmount,
+              'gross': grossAmount,
+              'tax': taxFee,
+              'admin': adminFee,
+              'net': netAmount,
+              'method': paymentMethod,
+              'name': accountName.trim(),
+              'accNo': accountNumber.trim(),
+              'notes': notes?.trim() ?? '',
+              'taxSt': taxStatus,
+              'adminSt': adminStatus,
+              'audit': initialAudit,
+            },
+          );
+          return null;
+        } catch (retryErr) {
+          debugPrint('[DatabaseService] Fallback to legacy base columns: $retryErr');
+          await _conn!.execute(
+            'INSERT INTO store_withdrawals (store_id, seller_id, amount, payment_method, account_name, account_number, notes, withdrawal_status, requested_at) '
+            'VALUES (:storeId, :sellerId, :amount, :method, :name, :accNo, :notes, "menunggu_verifikasi", CURRENT_TIMESTAMP)',
+            {
+              'storeId': storeId,
+              'sellerId': sellerId,
+              'amount': grossAmount,
+              'method': paymentMethod,
+              'name': accountName.trim(),
+              'accNo': accountNumber.trim(),
+              'notes': notes?.trim() ?? '',
+            },
+          );
+          return null;
+        }
+      }
     } catch (e) {
-      return 'Gagal mengajukan penarikan: $e';
+      debugPrint('[DatabaseService Exception] $e');
+      return 'Gagal mengajukan penarikan: Terjadi kendala teknis pada sistem database. Silakan coba kembali.';
     }
   }
 
   Future<bool> simulateReviewWithdrawal({
     required int withdrawalId,
-    required bool approve,
+    required WithdrawalStatus targetStatus,
     String? rejectionReason,
   }) async {
     if (_conn == null || !_conn!.connected) return false;
     try {
-      final statusStr = approve ? 'selesai' : 'ditolak';
+      String statusStr;
+      switch (targetStatus) {
+        case WithdrawalStatus.processing:
+        case WithdrawalStatus.approved:
+          statusStr = 'diproses';
+          break;
+        case WithdrawalStatus.completed:
+          statusStr = 'selesai';
+          break;
+        case WithdrawalStatus.rejected:
+          statusStr = 'ditolak';
+          break;
+        case WithdrawalStatus.waitingVerification:
+        case WithdrawalStatus.pending:
+          statusStr = 'menunggu_verifikasi';
+          break;
+      }
+
+      final reasonText = rejectionReason != null ? ': $rejectionReason' : '';
+      final auditEntry = '\n[${DateTime.now().toIso8601String()}] Status diubah menjadi ${targetStatus.label}$reasonText';
+
       await _conn!.execute(
-        'UPDATE store_withdrawals SET withdrawal_status = :st, rejection_reason = :reason, processed_at = CURRENT_TIMESTAMP WHERE withdrawal_id = :id',
+        'UPDATE store_withdrawals SET withdrawal_status = :st, rejection_reason = :reason, audit_trail = CONCAT(COALESCE(audit_trail, ""), :audit), processed_at = CURRENT_TIMESTAMP WHERE withdrawal_id = :id',
         {
           'st': statusStr,
-          'reason': approve ? null : (rejectionReason ?? 'Informasi rekening atau nama pemilik tidak valid.'),
+          'reason': targetStatus == WithdrawalStatus.rejected
+              ? (rejectionReason ?? 'Informasi rekening atau nama pemilik tidak valid.')
+              : null,
+          'audit': auditEntry,
           'id': withdrawalId,
         },
       );
@@ -1358,7 +2000,6 @@ class DatabaseService {
       return false;
     }
   }
-
   UserModel _mapRowToUserModel(Map<String, String?> row) {
     final userId = int.tryParse(row['user_id'] ?? '0') ?? 0;
     final storeId = int.tryParse(row['store_id'] ?? '0');
