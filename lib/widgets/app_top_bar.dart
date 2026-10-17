@@ -5,6 +5,7 @@ import '../providers/app_state.dart';
 import '../screens/auth/login_screen.dart';
 import '../screens/auth/register_screen.dart';
 import 'auth_guard_dialog.dart';
+import 'luwe_logo.dart';
 
 class AppTopBar extends StatelessWidget {
   final AppState state;
@@ -65,6 +66,10 @@ class AppTopBar extends StatelessWidget {
       ),
       child: Row(
         children: [
+          // Brand Logo
+          const LuweLogo(size: 38, compact: true),
+          const SizedBox(width: 16),
+
           // Search Field
           Expanded(
             flex: 3,
@@ -101,7 +106,7 @@ class AppTopBar extends StatelessWidget {
           ),
           const SizedBox(width: 16),
 
-          // Campus Faculty / Building Indicator
+          // Campus Faculty Indicator
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
@@ -123,14 +128,14 @@ class AppTopBar extends StatelessWidget {
                       color: AppColors.textPrimary,
                     ),
                     items: const [
-                      DropdownMenuItem(value: 'Semua Lokasi', child: Text('Semua Fakultas & Kantin')),
+                      DropdownMenuItem(value: 'Semua Lokasi', child: Text('Semua Fakultas')),
                       DropdownMenuItem(value: 'FIK', child: Text('Fakultas Ilmu Komputer (FIK)')),
                       DropdownMenuItem(value: 'FEB', child: Text('Fakultas Ekonomi & Bisnis (FEB)')),
                       DropdownMenuItem(value: 'FT', child: Text('Fakultas Teknik (FT)')),
-                      DropdownMenuItem(value: 'FISIP', child: Text('Fakultas Ilmu Sosial & Politik (FISIP)')),
+                      DropdownMenuItem(value: 'FP', child: Text('Fakultas Pertanian (FP)')),
                       DropdownMenuItem(value: 'FAD', child: Text('Fakultas Arsitektur & Desain (FAD)')),
-                      DropdownMenuItem(value: 'Giri Reksa', child: Text('Kantin Giri Reksa')),
-                      DropdownMenuItem(value: 'Santoso', child: Text('Kantin Giri Santoso')),
+                      DropdownMenuItem(value: 'FISIP', child: Text('Fakultas Ilmu Sosial & Politik (FISIP)')),
+                      DropdownMenuItem(value: 'FH', child: Text('Fakultas Hukum (FH)')),
                     ],
                     onChanged: (val) {
                       if (val != null) state.setSelectedFaculty(val);

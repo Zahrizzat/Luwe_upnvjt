@@ -190,7 +190,7 @@ class _StoreCardState extends State<StoreCard> {
                           ),
                           const SizedBox(width: 4),
                           Text(
-                            store.isDanusan ? 'Danusan Mahasiswa' : 'Kantin Kampus',
+                            store.isDanusan ? 'Danusan Mahasiswa' : 'Usaha Mahasiswa',
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 10,
@@ -371,11 +371,11 @@ class _StoreCardState extends State<StoreCard> {
                         ),
                         const SizedBox(width: 6),
 
-                        // Delivery Time
-                        const Icon(Icons.delivery_dining_rounded, size: 13, color: AppColors.primary),
-                        const SizedBox(width: 2),
+                        // Fakultas Usaha Mahasiswa
+                        const Icon(Icons.school_rounded, size: 12, color: AppColors.primary),
+                        const SizedBox(width: 3),
                         Text(
-                          store.deliveryTimeEstimate,
+                          store.facultyShort.isNotEmpty ? store.facultyShort : 'UPN',
                           style: const TextStyle(
                             fontSize: 10.5,
                             fontWeight: FontWeight.w700,

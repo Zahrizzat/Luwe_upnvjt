@@ -182,12 +182,12 @@ class _StoreVerificationScreenState extends State<StoreVerificationScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Formulir Pengajuan Stan Kuliner UPNVJT',
+                        'Formulir Verifikasi Toko Usaha & Danusan Mahasiswa',
                         style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
                       ),
                       SizedBox(height: 4),
                       Text(
-                        'Daftarkan stan kantin atau usaha kuliner mahasiswa Anda untuk diverifikasi oleh pengelola.',
+                        'Daftarkan usaha danusan atau wirausaha kuliner mahasiswa Anda untuk diverifikasi di lingkungan kampus UPNVJT.',
                         style: TextStyle(fontSize: 12, color: AppColors.textMuted),
                       ),
                     ],
@@ -200,7 +200,7 @@ class _StoreVerificationScreenState extends State<StoreVerificationScreen> {
             const SizedBox(height: 20),
 
             // Nama Toko
-            const Text('Nama Stan / Toko Kuliner *', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
+            const Text('Nama Toko Usaha / Danusan Mahasiswa *', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
             const SizedBox(height: 6),
             TextFormField(
               controller: _storeNameCtrl,

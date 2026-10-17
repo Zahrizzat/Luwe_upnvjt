@@ -294,32 +294,21 @@ class OrdersScreen extends StatelessWidget {
               child: Row(
                 children: [
                   _buildStep(
-                    title: '1. Dikonfirmasi',
+                    title: '1. Menunggu Konfirmasi',
                     isActive: true,
                     isDone: order.status != OrderStatus.waitingConfirmation,
                   ),
                   _buildStepConnector(isDone: order.status != OrderStatus.waitingConfirmation),
                   _buildStep(
-                    title: '2. Dimasak',
+                    title: '2. Siap Diambil / Diantar',
                     isActive: order.status == OrderStatus.processing ||
                         order.status == OrderStatus.readyForPickupOrDelivery ||
-                        order.status == OrderStatus.completed,
-                    isDone: order.status == OrderStatus.readyForPickupOrDelivery ||
-                        order.status == OrderStatus.completed,
-                  ),
-                  _buildStepConnector(
-                    isDone: order.status == OrderStatus.readyForPickupOrDelivery ||
-                        order.status == OrderStatus.completed,
-                  ),
-                  _buildStep(
-                    title: order.deliveryMethod == DeliveryMethod.pickup ? '3. Siap Ambil' : '3. Diantar',
-                    isActive: order.status == OrderStatus.readyForPickupOrDelivery ||
                         order.status == OrderStatus.completed,
                     isDone: order.status == OrderStatus.completed,
                   ),
                   _buildStepConnector(isDone: order.status == OrderStatus.completed),
                   _buildStep(
-                    title: '4. Selesai',
+                    title: '3. Selesai',
                     isActive: order.status == OrderStatus.completed,
                     isDone: order.status == OrderStatus.completed,
                   ),
@@ -369,13 +358,6 @@ class OrdersScreen extends StatelessWidget {
                                   it.item.name,
                                   style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
                                 ),
-                                if (it.selectedSpiceLevel.isNotEmpty) ...[
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    '(${it.selectedSpiceLevel})',
-                                    style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
-                                  ),
-                                ],
                               ],
                             ),
                             Text(
@@ -535,8 +517,11 @@ class OrdersScreen extends StatelessWidget {
                 const SizedBox(height: 16),
 
                 // Action buttons
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
+                Wrap(
+                  alignment: WrapAlignment.end,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 8,
+                  runSpacing: 8,
                   children: [
                     // Detail button
                     OutlinedButton.icon(
@@ -547,7 +532,50 @@ class OrdersScreen extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                       ),
                     ),
-                    const SizedBox(width: 8),
+
+                    // Direct Message Button (Terhubung ke Toko yang dipesan)
+                    OutlinedButton.icon(
+                      onPressed: () async {
+                        await state.openOrCreateConversationWithStore(
+                          storeId: order.merchantId,
+                          orderId: order.id,
+                        );
+                        state.setTabIndex(3);
+                        if (context.mounted && Navigator.of(context).canPop()) {
+                          Navigator.of(context).pop();
+                        }
+                      },
+                      icon: Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          const Icon(Icons.chat_bubble_outline_rounded, size: 14),
+                          if (state.getUnreadCountForOrder(order.id) > 0)
+                            Positioned(
+                              right: -4,
+                              top: -4,
+                              child: Container(
+                                padding: const EdgeInsets.all(2),
+                                decoration: const BoxDecoration(
+                                  color: AppColors.primaryRed,
+                                  shape: BoxShape.circle,
+                                ),
+                                constraints: const BoxConstraints(minWidth: 8, minHeight: 8),
+                              ),
+                            ),
+                        ],
+                      ),
+                      label: Text(
+                        state.getUnreadCountForOrder(order.id) > 0
+                            ? 'Direct Message (${state.getUnreadCountForOrder(order.id)})'
+                            : 'Direct Message',
+                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.primaryRed,
+                        side: const BorderSide(color: AppColors.primaryRed),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      ),
+                    ),
 
                     if (order.paymentMethod == PaymentMethod.qris &&
                         order.status == OrderStatus.waitingConfirmation) ...[

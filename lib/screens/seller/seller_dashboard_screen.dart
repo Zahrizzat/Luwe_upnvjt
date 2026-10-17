@@ -6,6 +6,7 @@ import '../../models/seller_analytics_model.dart';
 import '../../providers/app_state.dart';
 import '../../widgets/status_badge.dart';
 import 'tarik_saldo_dialog.dart';
+import 'edit_store_profile_dialog.dart';
 
 class SellerDashboardScreen extends StatelessWidget {
   final AppState state;
@@ -83,12 +84,73 @@ class SellerDashboardScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        '${user.storeLocation} • Dikelola oleh ${user.name} (NPM ${user.npm})',
+                        '${user.storeLocation}${user.storeFaculty != null ? " • ${user.storeFaculty}" : ""} • Dikelola oleh ${user.name} (NPM ${user.npm})',
                         style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
                       ),
                     ],
                   ),
                 ),
+
+                // Button Direct Message in Merchant Banner
+                OutlinedButton.icon(
+                  onPressed: () => state.setTabIndex(3),
+                  icon: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      const Icon(Icons.chat_bubble_outline_rounded, size: 16),
+                      if (state.totalUnreadMessages > 0)
+                        Positioned(
+                          right: -5,
+                          top: -5,
+                          child: Container(
+                            padding: const EdgeInsets.all(3),
+                            decoration: const BoxDecoration(
+                              color: AppColors.primaryRed,
+                              shape: BoxShape.circle,
+                            ),
+                            constraints: const BoxConstraints(minWidth: 12, minHeight: 12),
+                            child: Text(
+                              '${state.totalUnreadMessages}',
+                              style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.w900),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                  label: Text(
+                    state.totalUnreadMessages > 0
+                        ? 'Direct Message (${state.totalUnreadMessages})'
+                        : 'Direct Message',
+                    style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.primaryRed,
+                    side: const BorderSide(color: AppColors.primaryRed),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+                const SizedBox(width: 8),
+
+                // Button Edit Toko & Profil in Merchant Banner
+                OutlinedButton.icon(
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (ctx) => EditStoreProfileDialog(state: state),
+                    );
+                  },
+                  icon: const Icon(Icons.edit_note_rounded, size: 16),
+                  label: const Text('Edit Toko & Profil', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.primary,
+                    side: const BorderSide(color: AppColors.primary),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+                const SizedBox(width: 8),
 
                 // Button Tarik Saldo in Merchant Banner
                 ElevatedButton.icon(

@@ -6,6 +6,7 @@ import '../screens/auth/login_screen.dart';
 import '../screens/auth/register_screen.dart';
 import '../screens/buyer/store_verification_screen.dart';
 import 'auth_guard_dialog.dart';
+import 'luwe_logo.dart';
 
 class AppSidebar extends StatelessWidget {
   final AppState state;
@@ -93,32 +94,7 @@ class AppSidebar extends StatelessWidget {
             padding: const EdgeInsets.all(20),
             child: Row(
               children: [
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: AppColors.primary,
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.primary.withValues(alpha: 0.25),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: const Center(
-                    child: Text(
-                      'LW!',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w900,
-                        fontSize: 18,
-                        letterSpacing: -0.5,
-                      ),
-                    ),
-                  ),
-                ),
+                const LuweLogo(size: 40, compact: true),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
@@ -344,6 +320,16 @@ class AppSidebar extends StatelessWidget {
                       ),
                       _buildNavItem(
                         index: 3,
+                        icon: Icons.chat_bubble_outline_rounded,
+                        activeIcon: Icons.chat_bubble_rounded,
+                        label: 'Direct Message',
+                        badge: isLoggedIn && state.totalUnreadMessages > 0 ? '${state.totalUnreadMessages}' : null,
+                        badgeColor: AppColors.primaryRed,
+                        requiresAuth: true,
+                        authMessage: 'Masuk ke akun LuWe! kamu untuk membuka Direct Message.',
+                      ),
+                      _buildNavItem(
+                        index: 4,
                         icon: Icons.person_outline_rounded,
                         activeIcon: Icons.person_rounded,
                         label: 'Profil Akun',
@@ -370,6 +356,14 @@ class AppSidebar extends StatelessWidget {
                         label: 'Pesanan Masuk',
                         badge: state.activeSellerOrders.isNotEmpty ? '${state.activeSellerOrders.length} Baru' : '0',
                         badgeColor: state.activeSellerOrders.isNotEmpty ? AppColors.primary : const Color(0xFF94A3B8),
+                      ),
+                      _buildNavItem(
+                        index: 3,
+                        icon: Icons.chat_bubble_outline_rounded,
+                        activeIcon: Icons.chat_bubble_rounded,
+                        label: 'Direct Message',
+                        badge: state.totalUnreadMessages > 0 ? '${state.totalUnreadMessages}' : null,
+                        badgeColor: AppColors.primaryRed,
                       ),
                     ],
             ),

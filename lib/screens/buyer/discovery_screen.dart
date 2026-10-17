@@ -353,17 +353,17 @@ class DiscoveryScreen extends StatelessWidget {
                                     children: [
                                       Row(
                                         children: [
-                                          const Icon(Icons.speed_rounded, size: 14, color: Colors.yellowAccent),
+                                          const Icon(Icons.school_rounded, size: 14, color: Colors.yellowAccent),
                                           const SizedBox(width: 6),
                                           Text(
-                                            '${topStore.deliveryTimeEstimate} • Siap Antar',
+                                            '${topStore.faculty} • Usaha Mahasiswa',
                                             style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700),
                                           ),
                                         ],
                                       ),
                                       const SizedBox(height: 6),
                                       Text(
-                                        topStore.deliveryLocation,
+                                        topStore.location,
                                         style: const TextStyle(color: Colors.white70, fontSize: 10),
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
@@ -440,7 +440,7 @@ class DiscoveryScreen extends StatelessWidget {
                 _buildCategoryPill('Makanan Utama', Icons.lunch_dining_rounded),
                 _buildCategoryPill('Minuman Segar', Icons.local_cafe_rounded),
                 _buildCategoryPill('Cemilan & Snack', Icons.cookie_rounded),
-                _buildCategoryPill('Paket Hemat', Icons.savings_rounded),
+// Only 3 main categories
               ],
             ),
           ),
@@ -491,14 +491,14 @@ class DiscoveryScreen extends StatelessWidget {
                           icon: const Icon(Icons.arrow_drop_down, size: 20),
                           style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
                           items: const [
-                            DropdownMenuItem(value: 'Semua Lokasi', child: Text('Semua Fakultas & Kantin')),
+                            DropdownMenuItem(value: 'Semua Lokasi', child: Text('Semua Fakultas Usaha Mahasiswa')),
                             DropdownMenuItem(value: 'FIK', child: Text('Fakultas Ilmu Komputer (FIK)')),
                             DropdownMenuItem(value: 'FEB', child: Text('Fakultas Ekonomi dan Bisnis (FEB)')),
                             DropdownMenuItem(value: 'FT', child: Text('Fakultas Teknik (FT)')),
                             DropdownMenuItem(value: 'FISIP', child: Text('Fakultas Ilmu Sosial & Politik (FISIP)')),
                             DropdownMenuItem(value: 'FAD', child: Text('Fakultas Arsitektur & Desain (FAD)')),
-                            DropdownMenuItem(value: 'Giri Reksa', child: Text('Kantin Giri Reksa')),
-                            DropdownMenuItem(value: 'Santoso', child: Text('Kantin Giri Santoso')),
+                            DropdownMenuItem(value: 'FH', child: Text('Fakultas Hukum (FH)')),
+                            DropdownMenuItem(value: 'FP', child: Text('Fakultas Pertanian (FP)')),
                           ],
                           onChanged: (val) {
                             if (val != null) state.setSelectedFaculty(val);

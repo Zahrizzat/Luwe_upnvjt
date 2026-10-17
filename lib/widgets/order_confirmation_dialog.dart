@@ -271,11 +271,7 @@ class OrderConfirmationDialog extends StatelessWidget {
                                         it.item.name,
                                         style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
                                       ),
-                                      if (it.selectedSpiceLevel.isNotEmpty)
-                                        Text(
-                                          it.selectedSpiceLevel,
-                                          style: const TextStyle(fontSize: 10, color: AppColors.textMuted),
-                                        ),
+
                                     ],
                                   ),
                                 ),
@@ -327,7 +323,7 @@ class OrderConfirmationDialog extends StatelessWidget {
                             'Biaya Pengantaran',
                             order.deliveryFee == 0 ? 'Gratis (Rp 0)' : 'Rp ${order.deliveryFee}',
                             subtitle: order.deliveryMethod == DeliveryMethod.pickup
-                                ? 'Ambil mandiri di kantin/stan'
+                                ? 'Ambil mandiri di toko/stan'
                                 : 'Kurir mahasiswa antar gedung',
                           ),
                           if (order.discount > 0) ...[

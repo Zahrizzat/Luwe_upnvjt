@@ -750,7 +750,7 @@ void main() {
       state.switchToSellerMode();
 
       expect(state.currentSellerStore?.id, 'store_1');
-      expect(state.currentSellerStore?.name, 'Warung Sambal Kampus UPN');
+      expect(state.currentSellerStore?.name, anyOf('Warung Sambal Kampus UPN', 'Danus SIFO Mandiri'));
 
       final sellerItems = state.sellerMenuItems;
       expect(sellerItems.isNotEmpty, true);

@@ -497,25 +497,25 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
                                             ),
                                           ),
 
-                                          // Delivery estimation
+                                          // Fakultas Asal Usaha
                                           Container(
                                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                                             decoration: BoxDecoration(
-                                              color: AppColors.primaryLight,
+                                              color: AppColors.primaryContainer,
                                               borderRadius: BorderRadius.circular(8),
-                                              border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
+                                              border: Border.all(color: AppColors.primaryLight),
                                             ),
                                             child: Row(
                                               mainAxisSize: MainAxisSize.min,
                                               children: [
-                                                const Icon(Icons.delivery_dining_rounded, size: 16, color: AppColors.primary),
+                                                const Icon(Icons.school_rounded, size: 16, color: AppColors.primaryRed),
                                                 const SizedBox(width: 6),
                                                 Text(
-                                                  'Estimasi ${store.deliveryTimeEstimate}',
+                                                  store.faculty.isNotEmpty ? store.faculty : 'UPN "Veteran" Jawa Timur',
                                                   style: const TextStyle(
                                                     fontSize: 12,
                                                     fontWeight: FontWeight.w800,
-                                                    color: AppColors.primary,
+                                                    color: AppColors.primaryRed,
                                                   ),
                                                 ),
                                               ],

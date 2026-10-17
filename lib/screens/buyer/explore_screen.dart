@@ -29,7 +29,7 @@ class ExploreScreen extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           const Text(
-            'Temukan menu makanan dan minuman terbaik dari seluruh kantin & mahasiswa wirausaha UPNVJT.',
+            'Temukan menu makanan dan minuman terbaik dari seluruh usaha dan danusan mahasiswa UPNVJT.',
             style: TextStyle(fontSize: 13, color: AppColors.textMuted),
           ),
           const SizedBox(height: 20),
@@ -85,7 +85,7 @@ class ExploreScreen extends StatelessWidget {
                     'Makanan Utama',
                     'Minuman Segar',
                     'Cemilan & Snack',
-                    'Paket Hemat',
+// Only 3 categories
                   ].map((cat) {
                     final isSel = state.selectedCategory == cat;
                     return ChoiceChip(

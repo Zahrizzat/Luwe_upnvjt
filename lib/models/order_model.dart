@@ -42,6 +42,7 @@ class OrderModel {
   final DateTime createdAt;
   final String? notes;
   final String? cancellationReason;
+  final bool isStockDeducted;
 
   const OrderModel({
     required this.id,
@@ -67,20 +68,26 @@ class OrderModel {
     required this.createdAt,
     this.notes,
     this.cancellationReason,
+    this.isStockDeducted = false,
   });
 
   int get serviceFee => campusServiceFee;
+
+  String get merchantId {
+    if (items.isNotEmpty && items.first.item.merchantId.isNotEmpty) {
+      return items.first.item.merchantId;
+    }
+    if (storeId != null) return 'store_$storeId';
+    return 'store_1';
+  }
 
   String get statusText {
     switch (status) {
       case OrderStatus.waitingConfirmation:
         return 'Menunggu Konfirmasi';
       case OrderStatus.processing:
-        return 'Sedang Diproses';
       case OrderStatus.readyForPickupOrDelivery:
-        return deliveryMethod == DeliveryMethod.pickup
-            ? 'Siap Diambil di Kantin'
-            : 'Siap Diantar ke Gedung';
+        return 'Siap Diambil / Diantar';
       case OrderStatus.completed:
         return 'Pesanan Selesai';
       case OrderStatus.cancelled:
@@ -115,6 +122,7 @@ class OrderModel {
     DateTime? createdAt,
     String? notes,
     String? cancellationReason,
+    bool? isStockDeducted,
   }) {
     return OrderModel(
       id: id ?? this.id,
@@ -140,6 +148,7 @@ class OrderModel {
       createdAt: createdAt ?? this.createdAt,
       notes: notes ?? this.notes,
       cancellationReason: cancellationReason ?? this.cancellationReason,
+      isStockDeducted: isStockDeducted ?? this.isStockDeducted,
     );
   }
 }

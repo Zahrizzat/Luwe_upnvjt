@@ -96,8 +96,7 @@ class _SellerMenuScreenState extends State<SellerMenuScreen> {
                                 items: const [
                                   DropdownMenuItem(value: 'Makanan Utama', child: Text('Makanan Utama')),
                                   DropdownMenuItem(value: 'Minuman Segar', child: Text('Minuman Segar')),
-                                  DropdownMenuItem(value: 'Cemilan & Snack', child: Text('Cemilan & Snack')),
-                                  DropdownMenuItem(value: 'Paket Hemat', child: Text('Paket Hemat')),
+                                  DropdownMenuItem(value: 'Cemilan dan Snack', child: Text('Cemilan dan Snack')),
                                 ],
                                 onChanged: (v) {
                                   if (v != null) setDialogState(() => selectedCat = v);
@@ -230,7 +229,12 @@ class _SellerMenuScreenState extends State<SellerMenuScreen> {
     final priceCtrl = TextEditingController(text: item.price.toString());
     final stockCtrl = TextEditingController(text: item.stockCount.toString());
     final imgCtrl = TextEditingController(text: item.imageUrl);
-    String selectedCat = item.category;
+    String selectedCat = (item.category == 'Paket Hemat')
+        ? 'Makanan Utama'
+        : (item.category == 'Cemilan & Snack' ? 'Cemilan dan Snack' : item.category);
+    if (!const ['Makanan Utama', 'Cemilan dan Snack', 'Minuman Segar'].contains(selectedCat)) {
+      selectedCat = 'Makanan Utama';
+    }
     bool isReady = item.isReadyStock;
 
     showDialog(
@@ -284,8 +288,8 @@ class _SellerMenuScreenState extends State<SellerMenuScreen> {
                                 items: const [
                                   DropdownMenuItem(value: 'Makanan Utama', child: Text('Makanan Utama')),
                                   DropdownMenuItem(value: 'Minuman Segar', child: Text('Minuman Segar')),
-                                  DropdownMenuItem(value: 'Cemilan & Snack', child: Text('Cemilan & Snack')),
-                                  DropdownMenuItem(value: 'Paket Hemat', child: Text('Paket Hemat')),
+                                  // Category options
+                                  DropdownMenuItem(value: 'Cemilan dan Snack', child: Text('Cemilan dan Snack')),
                                 ],
                                 onChanged: (v) {
                                   if (v != null) setDialogState(() => selectedCat = v);
@@ -556,7 +560,9 @@ class _SellerMenuScreenState extends State<SellerMenuScreen> {
       final matchesSearch = _searchFilter.isEmpty ||
           it.name.toLowerCase().contains(_searchFilter.toLowerCase()) ||
           it.description.toLowerCase().contains(_searchFilter.toLowerCase());
-      final matchesCat = _selectedCategory == 'Semua Kategori' || it.category == _selectedCategory;
+      final matchesCat = _selectedCategory == 'Semua Kategori' ||
+          it.category == _selectedCategory ||
+          (_selectedCategory == 'Cemilan dan Snack' && it.category == 'Cemilan & Snack');
       return matchesSearch && matchesCat;
     }).toList();
 
@@ -721,8 +727,8 @@ class _SellerMenuScreenState extends State<SellerMenuScreen> {
                       DropdownMenuItem(value: 'Semua Kategori', child: Text('Semua Kategori Menu')),
                       DropdownMenuItem(value: 'Makanan Utama', child: Text('Makanan Utama')),
                       DropdownMenuItem(value: 'Minuman Segar', child: Text('Minuman Segar')),
-                      DropdownMenuItem(value: 'Cemilan & Snack', child: Text('Cemilan & Snack')),
-                      DropdownMenuItem(value: 'Paket Hemat', child: Text('Paket Hemat')),
+                      // Only 3 categories
+                      DropdownMenuItem(value: 'Cemilan dan Snack', child: Text('Cemilan dan Snack')),
                     ],
                     onChanged: (v) {
                       if (v != null) setState(() => _selectedCategory = v);

@@ -34,8 +34,11 @@ class AppState extends ChangeNotifier {
 
   bool get canSwitchToSeller => _isLoggedIn && _currentUser.isSellerApproved;
 
+  Future<void>? _initDbFuture;
+  Future<void>? get initDbFuture => _initDbFuture;
+
   AppState() {
-    _initDatabase();
+    _initDbFuture = _initDatabase();
   }
 
   Future<void> _initDatabase() async {
@@ -50,6 +53,11 @@ class AppState extends ChangeNotifier {
 
   // Authentication Flow: Login
   Future<String?> login(String emailOrNpm, String password) async {
+    if (_initDbFuture != null) {
+      try {
+        await _initDbFuture;
+      } catch (_) {}
+    }
     final user = await _dbService.login(emailOrNpm, password);
     if (user != null) {
       _currentUser = user;
@@ -97,7 +105,8 @@ class AppState extends ChangeNotifier {
           role: UserRole.seller,
           avatarUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=400&q=80',
           storeName: 'Warung Sambal Kampus UPN',
-          storeLocation: 'Kantin Barat • Gedung Giri Reksa',
+          storeLocation: 'Selasar Gedung Bersama FIK Lt. 1',
+          storeFaculty: 'Fakultas Ilmu Komputer (FIK)',
           isStoreOpen: true,
           verificationStatus: StoreVerificationStatus.approved,
         );
@@ -121,6 +130,11 @@ class AppState extends ChangeNotifier {
     required String phone,
     required String userType,
   }) async {
+    if (_initDbFuture != null) {
+      try {
+        await _initDbFuture;
+      } catch (_) {}
+    }
     final newUser = await _dbService.register(
       fullName: fullName,
       npm: npm,
@@ -430,7 +444,7 @@ class AppState extends ChangeNotifier {
       faculty: 'Fakultas Ilmu Komputer (FIK)',
       facultyShort: 'FIK',
       organization: 'Himpunan Mahasiswa Informatika (HIMAFIK)',
-      categories: ['Cemilan & Snack', 'Paket Hemat', 'Minuman Segar'],
+      categories: ['Cemilan & Snack', 'Minuman Segar', 'Makanan Utama'],
       location: 'Selasar Depan Lab Gedung FIK Lt. 1',
       bannerUrl: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80',
       logoUrl: 'https://images.unsplash.com/photo-1541544741938-0af808871cc0?auto=format&fit=crop&w=400&q=80',
@@ -438,7 +452,7 @@ class AppState extends ChangeNotifier {
       reviewCount: 168,
       isOpen: true,
       deliveryTimeEstimate: '10 - 20 mnt',
-      deliveryLocation: 'Antar Selasar/Kelas Gedung FIK & Kantin Barat',
+      deliveryLocation: 'Antar Selasar/Kelas Gedung FIK',
       isDanusan: true,
       isVerified: true,
       tags: ['Danusan Resmi FIK', 'UPNVJT Verified', 'Dana Informatics Fest'],
@@ -493,7 +507,7 @@ class AppState extends ChangeNotifier {
       faculty: 'Fakultas Arsitektur dan Desain (FAD)',
       facultyShort: 'FAD',
       organization: 'Himpunan Mahasiswa Arsitektur (HIMASITEK)',
-      categories: ['Cemilan & Snack', 'Minuman Segar', 'Paket Hemat'],
+      categories: ['Cemilan & Snack', 'Minuman Segar', 'Makanan Utama'],
       location: 'Gedung FAD Lt. 2 • Selasar Studio Desain',
       bannerUrl: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=800&q=80',
       logoUrl: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=400&q=80',
@@ -515,7 +529,7 @@ class AppState extends ChangeNotifier {
       facultyShort: 'FISIP',
       organization: 'Komunitas Danusan Komunikasi FISIP',
       categories: ['Makanan Utama', 'Cemilan & Snack', 'Minuman Segar'],
-      location: 'Gedung FISIP Lt. 1 Samping Kantin Hijau',
+      location: 'Gedung FISIP Lt. 1 Selasar Kampus',
       bannerUrl: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=800&q=80',
       logoUrl: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=400&q=80',
       rating: 4.8,
@@ -554,64 +568,66 @@ class AppState extends ChangeNotifier {
       sellerId: 2,
       name: 'Warung Sambal Kampus UPN',
       slug: 'warung-sambal-kampus-upn',
-      description: 'Kuliner pedas nikmat khas mahasiswa UPNVJT Kantin Giri Reksa. Ayam geprek sambal bawang pedas segar, paket hemat ayam lava + es teh jumbo, dan penyetan bebek gurih.',
-      faculty: 'Kantin Giri Reksa',
-      facultyShort: 'Giri Reksa',
-      organization: 'Kantin Barat UPN "Veteran" Jatim',
-      categories: ['Makanan Utama', 'Paket Hemat', 'Cemilan & Snack'],
-      location: 'Kantin Barat • Gedung Giri Reksa',
+      description: 'Kuliner pedas nikmat karya mahasiswa wirausaha UPN "Veteran" Jawa Timur. Ayam geprek sambal bawang pedas segar, ayam lava, dan penyetan bebek gurih.',
+      faculty: 'Fakultas Ilmu Komputer (FIK)',
+      facultyShort: 'FIK',
+      organization: 'Usaha Mandiri Mahasiswa FIK',
+      categories: ['Makanan Utama', 'Cemilan & Snack', 'Minuman Segar'],
+      location: 'Selasar Gedung Bersama FIK Lt. 1',
       bannerUrl: 'https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?auto=format&fit=crop&w=800&q=80',
       logoUrl: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&w=400&q=80',
       rating: 4.9,
       reviewCount: 348,
       isOpen: true,
       deliveryTimeEstimate: '10 - 20 mnt',
-      deliveryLocation: 'Antar ke Seluruh 7 Fakultas & Lab UPNVJT',
-      isDanusan: false,
+      deliveryLocation: 'Selasar Gedung Kuliah & Lab UPNVJT',
+      isDanusan: true,
       isVerified: true,
       tags: ['Paling Laris UPN', 'Ayam Geprek Pedas', 'Terverifikasi Kampus'],
     ),
     const StoreModel(
       id: 'store_dapur_upn',
-      name: 'Dapur Mahasiswa UPN',
-      slug: 'dapur-mahasiswa-upn',
-      description: 'Aneka hidangan nusantara rumahan porsi kenyang harga mahasiswa di Kantin Giri Santoso. Nasi goreng spesial kampus, chicken katsu sambal terasi, dan es jeruk peras murni.',
-      faculty: 'Kantin Giri Santoso',
-      facultyShort: 'Santoso',
-      organization: 'Koperasi Kuliner Mahasiswa UPN',
-      categories: ['Makanan Utama', 'Paket Hemat', 'Minuman Segar'],
-      location: 'Kantin Giri Santoso Lt. 1 No. 3',
+      dbStoreId: 2,
+      sellerId: 3,
+      name: 'Danus SIFO',
+      slug: 'danus-sifo',
+      description: 'Usaha danusan mahasiswa Sistem Informasi UPN "Veteran" Jawa Timur. Aneka hidangan nusantara rumahan porsi kenyang harga mahasiswa: nasi ayam katsu sambal geprek, rice bowl teriyaki, dan aneka minuman segar nugas.',
+      faculty: 'Fakultas Ilmu Komputer (FIK)',
+      facultyShort: 'FIK',
+      organization: 'Himpunan Mahasiswa Sistem Informasi (HIMASIFO)',
+      categories: ['Makanan Utama', 'Minuman Segar', 'Cemilan & Snack'],
+      location: 'Selasar Lab Sistem Informasi Gedung FIK Lt. 2',
       bannerUrl: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80',
       logoUrl: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=400&q=80',
       rating: 4.7,
       reviewCount: 92,
       isOpen: true,
       deliveryTimeEstimate: '10 - 15 mnt',
-      deliveryLocation: 'Antar ke Area Giri Santoso & Ruang UKM',
-      isDanusan: false,
+      deliveryLocation: 'Selasar Gedung FIK & Perpustakaan',
+      isDanusan: true,
       isVerified: true,
-      tags: ['Dapur Mahasiswa', 'Nasi Goreng Kampus', 'Porsi Kenyang'],
+      tags: ['Danus SIFO', 'Nasi Goreng Kampus', 'Porsi Kenyang'],
     ),
     const StoreModel(
       id: 'store_tehpoci',
-      name: 'Teh Poci Kampus Rungkut',
-      slug: 'teh-poci-kampus-rungkut',
-      description: 'Pelepas dahaga legendaris mahasiswa UPN. Es teh melati seduhan poci tanah liat tradisional ukuran jumbo porsi puas harga pas di kantong mahasiswa.',
-      faculty: 'Kantin Giri Santoso',
-      facultyShort: 'Santoso',
-      organization: 'Kantin Giri Santoso UPN',
-      categories: ['Minuman Segar', 'Paket Hemat'],
-      location: 'Kantin Giri Santoso Lt. 1',
+      name: 'Danus FP — Teh Poci Kampus',
+      slug: 'danus-fp-teh-poci',
+      description: 'Pelepas dahaga legendaris wirausaha mahasiswa Fakultas Pertanian UPNVJT. Es teh melati seduhan poci tanah liat tradisional ukuran jumbo porsi puas harga pas di kantong mahasiswa.',
+      faculty: 'Fakultas Pertanian (FP)',
+      facultyShort: 'FP',
+      organization: 'Danusan Mahasiswa Agroteknologi FP',
+      categories: ['Minuman Segar', 'Cemilan & Snack'],
+      location: 'Selasar Gazebo Fakultas Pertanian',
       bannerUrl: 'https://images.unsplash.com/photo-1556679343-c7306c1976bc?auto=format&fit=crop&w=800&q=80',
       logoUrl: 'https://images.unsplash.com/photo-1576092768241-dec231879fc3?auto=format&fit=crop&w=400&q=80',
       rating: 4.9,
       reviewCount: 310,
       isOpen: true,
       deliveryTimeEstimate: '5 - 15 mnt',
-      deliveryLocation: 'Antar Cepat Area Kantin & Selasar',
-      isDanusan: false,
+      deliveryLocation: 'Selasar Area Fakultas Pertanian',
+      isDanusan: true,
       isVerified: true,
-      tags: ['Es Jumbo', 'Segar Dingin', 'Favorit Mahasiswa'],
+      tags: ['Danus FP', 'Es Jumbo', 'Favorit Mahasiswa'],
     ),
   ];
 
@@ -763,21 +779,21 @@ class AppState extends ChangeNotifier {
       id: _currentUser.dbStoreId != null ? 'store_${_currentUser.dbStoreId}' : 'store_${_currentUser.id}',
       dbStoreId: _currentUser.dbStoreId,
       sellerId: _currentUser.dbUserId,
-      name: _currentUser.storeName.isNotEmpty ? _currentUser.storeName : 'Toko Saya',
+      name: _currentUser.storeName.isNotEmpty ? _currentUser.storeName : 'Toko Usaha Mahasiswa',
       slug: 'store-${_currentUser.dbStoreId ?? _currentUser.id}',
-      description: _currentUser.storeDescription ?? 'Toko resmi mitra kampus UPN "Veteran" Jawa Timur.',
-      faculty: _currentUser.faculty,
+      description: _currentUser.storeDescription ?? 'Toko usaha mahasiswa UPN "Veteran" Jawa Timur.',
+      faculty: _currentUser.storeFaculty ?? _currentUser.faculty,
       facultyShort: 'UPNVJT',
-      organization: 'Kantin Mahasiswa UPN',
-      categories: const ['Makanan Utama', 'Minuman Segar', 'Cemilan & Snack', 'Paket Hemat'],
-      location: _currentUser.storeLocation.isNotEmpty ? _currentUser.storeLocation : 'Kantin Kampus UPN',
-      bannerUrl: _currentUser.avatarUrl,
+      organization: 'Usaha Mahasiswa UPN',
+      categories: const ['Makanan Utama', 'Cemilan & Snack', 'Minuman Segar'],
+      location: _currentUser.storeLocation.isNotEmpty ? _currentUser.storeLocation : 'Selasar Kampus UPN',
+      bannerUrl: _currentUser.storeBannerPhoto ?? _currentUser.avatarUrl,
       logoUrl: _currentUser.avatarUrl,
       rating: 5.0,
       reviewCount: 0,
       isOpen: _currentUser.isStoreOpen,
       deliveryTimeEstimate: '10 - 20 mnt',
-      deliveryLocation: 'Antar Area Kampus',
+      deliveryLocation: 'Selasar Kampus UPN',
       isDanusan: false,
       isVerified: true,
     );
@@ -1306,7 +1322,7 @@ class AppState extends ChangeNotifier {
       price: 15000,
       originalPrice: 18000,
       imageUrl: 'https://images.unsplash.com/photo-1606313564200-e75d5e30476c?auto=format&fit=crop&w=800&q=80',
-      category: 'Paket Hemat',
+      category: 'Cemilan & Snack',
       rating: 5.0,
       reviewCount: 96,
       isPromo: true,
@@ -1523,7 +1539,7 @@ class AppState extends ChangeNotifier {
       dbProductId: 1,
       merchantId: 'store_1',
       merchantName: 'Warung Sambal Kampus UPN',
-      merchantLocation: 'Kantin Barat • Gedung Giri Reksa',
+      merchantLocation: 'Selasar Gedung Bersama FIK Lt. 1',
       name: 'Ayam Geprek Sambal Bawang UPNVJT',
       description: 'Ayam krispi gurih dengan ulekan cabai rawit pedas segar khas sambal bawang Surabaya, disajikan hangat bersama nasi pulen dan lalapan segar.',
       price: 15000,
@@ -1544,13 +1560,13 @@ class AppState extends ChangeNotifier {
       dbProductId: 5,
       merchantId: 'store_1',
       merchantName: 'Warung Sambal Kampus UPN',
-      merchantLocation: 'Kantin Giri Reksa • Samping FIK',
-      name: 'Paket Hemat: Ayam Krispi + Es Teh Jumbo',
-      description: 'Paket kenyang andalan mahasiswa tanggal tua: Nasi putih pulen, ayam krispi saus lava pedas manis, plus free Es Teh Jumbo.',
+      merchantLocation: 'Selasar Gedung Bersama FIK Lt. 1',
+      name: 'Ayam Krispi Saus Lava + Es Teh Jumbo',
+      description: 'Menu kenyang andalan mahasiswa tanggal tua: Nasi putih pulen, ayam krispi saus lava pedas manis, plus free Es Teh Jumbo.',
       price: 18000,
       originalPrice: 22000,
       imageUrl: 'https://images.unsplash.com/photo-1562967914-608f82629710?auto=format&fit=crop&w=800&q=80',
-      category: 'Paket Hemat',
+      category: 'Makanan Utama',
       rating: 5.0,
       reviewCount: 220,
       isPromo: true,
@@ -1564,8 +1580,8 @@ class AppState extends ChangeNotifier {
       id: 'menu_07',
       merchantId: 'store_1',
       merchantName: 'Warung Sambal Kampus UPN',
-      merchantLocation: 'Kantin Barat • Gedung Giri Reksa',
-      name: 'Penyetan Bebek Goreng Sambal Ijo Giri Reksa',
+      merchantLocation: 'Selasar Gedung Bersama FIK Lt. 1',
+      name: 'Penyetan Bebek Goreng Sambal Ijo Kampus',
       description: 'Bebek goreng empuk berbumbu rempah dengan ulekan sambal ijo gurih pedas khas Jawa Timuran, lalapan timun dan kemangi.',
       price: 22000,
       imageUrl: 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=800&q=80',
@@ -1583,7 +1599,7 @@ class AppState extends ChangeNotifier {
       id: 'menu_08',
       merchantId: 'store_1',
       merchantName: 'Warung Sambal Kampus UPN',
-      merchantLocation: 'Kantin Barat • Gedung Giri Reksa',
+      merchantLocation: 'Selasar Gedung Bersama FIK Lt. 1',
       name: 'Tempe & Tahu Crispy Ulek Bawang',
       description: 'Tempe kedelai dan tahu goreng tepung garing disajikan dengan sambal korek pedas bawang putih hangat.',
       price: 8000,
@@ -1599,13 +1615,13 @@ class AppState extends ChangeNotifier {
       availableSpiceLevels: ['Sambal Korek', 'Sambal Bawang'],
     ),
 
-    // --- Store Teh Poci (Teh Poci Kampus Rungkut) ---
+    // --- Store Teh Poci (Danus FP — Teh Poci Kampus) ---
     const MenuItemModel(
       id: 'menu_03',
       dbProductId: 3,
       merchantId: 'store_tehpoci',
-      merchantName: 'Teh Poci Kampus Rungkut',
-      merchantLocation: 'Kantin Giri Santoso',
+      merchantName: 'Danus FP — Teh Poci Kampus',
+      merchantLocation: 'Selasar Gazebo Fakultas Pertanian',
       name: 'Es Teh Melati Jumbo Kampus',
       description: 'Es teh melati seduh tradisional poci tanah liat dengan aroma melati wangi semerbak, pelepas dahaga nomor satu saat terik perkuliahan.',
       price: 5000,
@@ -1624,8 +1640,8 @@ class AppState extends ChangeNotifier {
     const MenuItemModel(
       id: 'menu_09',
       merchantId: 'store_tehpoci',
-      merchantName: 'Teh Poci Kampus Rungkut',
-      merchantLocation: 'Kantin Giri Santoso',
+      merchantName: 'Danus FP — Teh Poci Kampus',
+      merchantLocation: 'Selasar Gazebo Fakultas Pertanian',
       name: 'Es Lemon Tea Segar Kampus',
       description: 'Racikan teh poci melati dengan perasan lemon segar dingin, kaya vitamin C untuk menyegarkan stamina kuliah.',
       price: 7000,
@@ -1741,12 +1757,12 @@ class AppState extends ChangeNotifier {
       availableSpiceLevels: ['Manis Normal', 'Less Sugar'],
     ),
 
-    // --- Store Dapur Mahasiswa UPN ---
+    // --- Store Danus SIFO ---
     const MenuItemModel(
       id: 'menu_dapur_01',
       merchantId: 'store_dapur_upn',
-      merchantName: 'Dapur Mahasiswa UPN',
-      merchantLocation: 'Kantin Giri Santoso Lt. 1 No. 3',
+      merchantName: 'Danus SIFO',
+      merchantLocation: 'Selasar Lab Sistem Informasi Gedung FIK Lt. 2',
       name: 'Nasi Goreng Spesial Kampus UPN',
       description: 'Nasi goreng bumbu racik khas Jawa Timuran dengan suwiran ayam, telur ceplok/dadar, acar segar, dan kerupuk renyah.',
       price: 14000,
@@ -1765,8 +1781,8 @@ class AppState extends ChangeNotifier {
     const MenuItemModel(
       id: 'menu_dapur_02',
       merchantId: 'store_dapur_upn',
-      merchantName: 'Dapur Mahasiswa UPN',
-      merchantLocation: 'Kantin Giri Santoso Lt. 1 No. 3',
+      merchantName: 'Danus SIFO',
+      merchantLocation: 'Selasar Lab Sistem Informasi Gedung FIK Lt. 2',
       name: 'Rice Bowl Chicken Katsu Sambal Terasi',
       description: 'Fillet ayam katsu krispi golden brown berpadu sambal terasi matang hangat dan nasi pulen hangat.',
       price: 16000,
@@ -1778,14 +1794,14 @@ class AppState extends ChangeNotifier {
       isReadyStock: true,
       stockCount: 18,
       soldCount: 160,
-      tags: ['Halal', 'Chicken Katsu', 'Kantin Santoso'],
+      tags: ['Halal', 'Chicken Katsu', 'Danus SIFO'],
       availableSpiceLevels: ['Sambal Terasi Sedang', 'Sambal Terasi Pedas'],
     ),
     const MenuItemModel(
       id: 'menu_dapur_03',
       merchantId: 'store_dapur_upn',
-      merchantName: 'Dapur Mahasiswa UPN',
-      merchantLocation: 'Kantin Giri Santoso Lt. 1 No. 3',
+      merchantName: 'Danus SIFO',
+      merchantLocation: 'Selasar Lab Sistem Informasi Gedung FIK Lt. 2',
       name: 'Es Jeruk Peras Segar UPN',
       description: 'Perasan jeruk segar asli dengan gula tebu murni dan es batu dingin menyegarkan siang kampus.',
       price: 5000,
@@ -2133,7 +2149,7 @@ class AppState extends ChangeNotifier {
       // Local / Offline demo calculation
       // Total omzet HANYA dihitung dari transaksi yang selesai/valid
       int calcOmset = 0;
-      final completedOrders = _orders.where((o) => o.status == OrderStatus.completed);
+      final completedOrders = sellerOrders.where((o) => o.status == OrderStatus.completed);
       for (final o in completedOrders) {
         calcOmset += o.subtotal;
       }
@@ -2387,24 +2403,30 @@ class AppState extends ChangeNotifier {
   List<OrderModel> _buyerOrders = [];
   List<OrderModel> get buyerOrders => _buyerOrders.isNotEmpty ? _buyerOrders : (_activeRole == UserRole.buyer ? _orders : []);
 
+  final Set<String> _stockDeductedOrderIds = {};
+  final Set<String> _confirmingOrderIds = {};
+  Future<void>? _lastOrderCreationFuture;
+  Future<void>? get lastOrderCreationFuture => _lastOrderCreationFuture;
+
   List<OrderModel> _sellerOrders = [];
   List<OrderModel> get sellerOrders {
-    if (_sellerOrders.isNotEmpty) {
-      return _sellerOrders;
-    }
-    // If DB is connected and user has store, _sellerOrders from DB is authoritative
-    if (_isDbConnected && _currentUser.dbStoreId != null) {
-      return _sellerOrders;
-    }
     final store = currentSellerStore;
-    if (store == null) return [];
-    // Strict isolation: only return orders whose items belong to this seller's store!
-    return _orders.where((order) {
+    if (store == null) return _sellerOrders;
+
+    if (_isDbConnected && _currentUser.dbStoreId != null && _sellerOrders.isNotEmpty) {
+      return _sellerOrders;
+    }
+
+    final Set<String> existingIds = _sellerOrders.map((o) => o.id).toSet();
+    final matching = _orders.where((order) {
+      if (existingIds.contains(order.id)) return false;
       if (order.items.isNotEmpty) {
         return order.items.any((ci) => isItemBelongsToStore(ci.item, store));
       }
       return order.merchantName.trim().toLowerCase() == store.name.trim().toLowerCase();
     }).toList();
+
+    return [..._sellerOrders, ...matching];
   }
 
   List<OrderModel> get activeSellerOrders => sellerOrders
@@ -2461,7 +2483,7 @@ class AppState extends ChangeNotifier {
       buyerName: _currentUser.name,
       buyerNpm: _currentUser.npm,
       buyerPhone: _currentUser.phoneNumber,
-      merchantName: _cartItems.isNotEmpty ? _cartItems.first.item.merchantName : 'Stan Kuliner UPN',
+      merchantName: _cartItems.isNotEmpty ? _cartItems.first.item.merchantName : 'Danus Mahasiswa UPN',
       items: List.from(_cartItems),
       subtotal: currentSubtotal,
       campusServiceFee: currentServiceFee,
@@ -2476,10 +2498,19 @@ class AppState extends ChangeNotifier {
       status: OrderStatus.waitingConfirmation,
       createdAt: DateTime.now(),
       notes: notes,
+      isStockDeducted: false,
     );
 
     _orders.insert(0, newOrder);
     _buyerOrders.insert(0, newOrder);
+
+    // If order belongs to active seller store, make sure it is in _sellerOrders
+    final store = currentSellerStore;
+    if (store != null && (newOrder.items.isEmpty || newOrder.items.any((ci) => isItemBelongsToStore(ci.item, store)))) {
+      if (!_sellerOrders.any((o) => o.id == newOrder.id)) {
+        _sellerOrders.insert(0, newOrder);
+      }
+    }
 
     // Save to database asynchronously
     if (_currentUser.dbUserId != null) {
@@ -2489,13 +2520,13 @@ class AppState extends ChangeNotifier {
         final parsed = int.tryParse(mId.replaceAll(RegExp(r'[^0-9]'), ''));
         if (parsed != null && parsed > 0) targetStoreId = parsed;
       }
-      _dbService.createOrder(
+      _lastOrderCreationFuture = _dbService.createOrder(
         buyerId: _currentUser.dbUserId!,
         storeId: targetStoreId,
         order: newOrder,
-      ).then((_) {
-        refreshOrders();
-        refreshSellerFinancials();
+      ).then((_) async {
+        await refreshOrders();
+        await refreshSellerFinancials();
       });
     }
 
@@ -2505,7 +2536,13 @@ class AppState extends ChangeNotifier {
     return newOrder;
   }
 
-  void _mutateOrderStatusLocally(String orderCode, OrderStatus status, {String? cancellationReason, String? paymentStatus}) {
+  void _mutateOrderStatusLocally(
+    String orderCode,
+    OrderStatus status, {
+    String? cancellationReason,
+    String? paymentStatus,
+    bool? isStockDeducted,
+  }) {
     void updateList(List<OrderModel> list) {
       final idx = list.indexWhere((o) => o.id == orderCode);
       if (idx != -1) {
@@ -2513,6 +2550,7 @@ class AppState extends ChangeNotifier {
           status: status,
           cancellationReason: cancellationReason ?? list[idx].cancellationReason,
           paymentStatus: paymentStatus ?? list[idx].paymentStatus,
+          isStockDeducted: isStockDeducted ?? list[idx].isStockDeducted,
         );
       }
     }
@@ -2523,8 +2561,27 @@ class AppState extends ChangeNotifier {
   }
 
   Future<bool> cancelOrder(String orderCode, {String reason = 'Dibatalkan oleh pembeli'}) async {
+    // If order had stock deducted, restore stock
+    OrderModel? targetOrder;
+    for (final o in [..._orders, ..._buyerOrders, ..._sellerOrders]) {
+      if (o.id == orderCode) {
+        targetOrder = o;
+        break;
+      }
+    }
+    if ((_stockDeductedOrderIds.contains(orderCode) || (targetOrder?.isStockDeducted ?? false)) && targetOrder != null) {
+      for (final cartItem in targetOrder.items) {
+        final idx = _menuItems.indexWhere((m) => m.id == cartItem.item.id || m.name.toLowerCase() == cartItem.item.name.toLowerCase());
+        if (idx != -1) {
+          final cur = _menuItems[idx];
+          _menuItems[idx] = cur.copyWith(stockCount: cur.stockCount + cartItem.quantity);
+        }
+      }
+      _stockDeductedOrderIds.remove(orderCode);
+    }
+
     if (_currentUser.dbUserId == null) {
-      _mutateOrderStatusLocally(orderCode, OrderStatus.cancelled, cancellationReason: reason);
+      _mutateOrderStatusLocally(orderCode, OrderStatus.cancelled, cancellationReason: reason, isStockDeducted: false);
       return true;
     }
     final ok = await _dbService.cancelOrder(
@@ -2536,7 +2593,7 @@ class AppState extends ChangeNotifier {
       await refreshOrders();
       await refreshSellerFinancials();
     } else {
-      _mutateOrderStatusLocally(orderCode, OrderStatus.cancelled, cancellationReason: reason);
+      _mutateOrderStatusLocally(orderCode, OrderStatus.cancelled, cancellationReason: reason, isStockDeducted: false);
     }
     return ok;
   }
@@ -2560,30 +2617,199 @@ class AppState extends ChangeNotifier {
   }
 
   Future<bool> updateSellerOrderStatus(String orderCode, OrderStatus newStatus) async {
-    if (_currentUser.dbStoreId == null) {
-      String? payStatus;
-      if (newStatus == OrderStatus.completed) {
-        payStatus = 'Lunas';
+    if (_lastOrderCreationFuture != null) {
+      try {
+        await _lastOrderCreationFuture;
+      } catch (_) {}
+    }
+    if (_confirmingOrderIds.contains(orderCode)) {
+      return false; // Prevent concurrent requests
+    }
+
+    OrderModel? targetOrder;
+    for (final o in [..._orders, ..._sellerOrders, ..._buyerOrders]) {
+      if (o.id == orderCode && o.items.isNotEmpty) {
+        targetOrder = o;
+        break;
       }
-      _mutateOrderStatusLocally(orderCode, newStatus, paymentStatus: payStatus);
+    }
+    targetOrder ??= [..._sellerOrders, ..._orders, ..._buyerOrders].where((o) => o.id == orderCode).firstOrNull;
+
+    if (newStatus == OrderStatus.readyForPickupOrDelivery) {
+      final alreadyDeducted = _stockDeductedOrderIds.contains(orderCode) || (targetOrder?.isStockDeducted ?? false);
+      if (!alreadyDeducted && targetOrder != null) {
+        // 1. Validate stock availability before confirming
+        for (final cartItem in targetOrder.items) {
+          final idx = _menuItems.indexWhere((m) => m.id == cartItem.item.id || m.name.toLowerCase() == cartItem.item.name.toLowerCase());
+          if (idx != -1) {
+            if (_menuItems[idx].stockCount < cartItem.quantity) {
+              throw StateError('Stok produk "${cartItem.item.name}" tidak mencukupi (tersedia: ${_menuItems[idx].stockCount}, diminta: ${cartItem.quantity}).');
+            }
+          }
+        }
+
+        _confirmingOrderIds.add(orderCode);
+        try {
+          // 2. Reduce stock atomically in memory
+          for (final cartItem in targetOrder.items) {
+            final idx = _menuItems.indexWhere((m) => m.id == cartItem.item.id || m.name.toLowerCase() == cartItem.item.name.toLowerCase());
+            if (idx != -1) {
+              final current = _menuItems[idx];
+              final newStock = (current.stockCount - cartItem.quantity).clamp(0, 999999);
+              _menuItems[idx] = current.copyWith(stockCount: newStock);
+            }
+          }
+          _stockDeductedOrderIds.add(orderCode);
+          _mutateOrderStatusLocally(orderCode, OrderStatus.readyForPickupOrDelivery, isStockDeducted: true);
+
+          if (_currentUser.dbStoreId != null && _isDbConnected) {
+            final ok = await _dbService.sellerUpdateOrderStatus(
+              orderCode: orderCode,
+              status: OrderStatus.readyForPickupOrDelivery,
+              storeId: _currentUser.dbStoreId!,
+            );
+            if (ok) {
+              await refreshOrders();
+              await refreshSellerFinancials();
+              await _syncProducts();
+            }
+            return ok;
+          }
+          return true;
+        } finally {
+          _confirmingOrderIds.remove(orderCode);
+        }
+      } else {
+        _mutateOrderStatusLocally(orderCode, OrderStatus.readyForPickupOrDelivery);
+        if (_currentUser.dbStoreId != null && _isDbConnected) {
+          final ok = await _dbService.sellerUpdateOrderStatus(
+            orderCode: orderCode,
+            status: OrderStatus.readyForPickupOrDelivery,
+            storeId: _currentUser.dbStoreId!,
+          );
+          if (ok) {
+            await refreshOrders();
+            await refreshSellerFinancials();
+          }
+          return ok;
+        }
+        return true;
+      }
+    } else if (newStatus == OrderStatus.cancelled) {
+      final wasDeducted = _stockDeductedOrderIds.contains(orderCode) || (targetOrder?.isStockDeducted ?? false);
+      if (wasDeducted && targetOrder != null) {
+        // Restore stock atomically in memory
+        for (final cartItem in targetOrder.items) {
+          final idx = _menuItems.indexWhere((m) => m.id == cartItem.item.id || m.name.toLowerCase() == cartItem.item.name.toLowerCase());
+          if (idx != -1) {
+            final cur = _menuItems[idx];
+            _menuItems[idx] = cur.copyWith(stockCount: cur.stockCount + cartItem.quantity);
+          }
+        }
+        _stockDeductedOrderIds.remove(orderCode);
+      }
+      _mutateOrderStatusLocally(orderCode, OrderStatus.cancelled, isStockDeducted: false, cancellationReason: 'Ditolak oleh penjual');
+
+      if (_currentUser.dbStoreId != null && _isDbConnected) {
+        final ok = await _dbService.sellerUpdateOrderStatus(
+          orderCode: orderCode,
+          status: OrderStatus.cancelled,
+          storeId: _currentUser.dbStoreId!,
+        );
+        if (ok) {
+          await refreshOrders();
+          await refreshSellerFinancials();
+          await _syncProducts();
+        }
+        return ok;
+      }
+      return true;
+    } else if (newStatus == OrderStatus.completed) {
+      // Completed: DO NOT deduct stock again!
+      _mutateOrderStatusLocally(orderCode, OrderStatus.completed, paymentStatus: 'Lunas');
+      if (_currentUser.dbStoreId != null && _isDbConnected) {
+        final ok = await _dbService.sellerUpdateOrderStatus(
+          orderCode: orderCode,
+          status: OrderStatus.completed,
+          storeId: _currentUser.dbStoreId!,
+        );
+        if (ok) {
+          await refreshOrders();
+          await refreshSellerFinancials();
+        }
+        return ok;
+      }
       return true;
     }
-    final ok = await _dbService.sellerUpdateOrderStatus(
-      orderCode: orderCode,
-      status: newStatus,
-      storeId: _currentUser.dbStoreId!,
+
+    _mutateOrderStatusLocally(orderCode, newStatus);
+    return true;
+  }
+
+  Future<bool> updateSellerStoreProfile({
+    required String sellerName,
+    required String phoneNumber,
+    String? avatarUrl,
+    required String storeName,
+    required String storeFaculty,
+    required String storeLocation,
+    required String storeDescription,
+    String? storeLogoUrl,
+    String? storeBannerUrl,
+  }) async {
+    // 1. Update _currentUser
+    _currentUser = _currentUser.copyWith(
+      name: sellerName,
+      phoneNumber: phoneNumber,
+      avatarUrl: (avatarUrl != null && avatarUrl.isNotEmpty) ? avatarUrl : _currentUser.avatarUrl,
+      storeName: storeName,
+      storeFaculty: storeFaculty,
+      storeLocation: storeLocation,
+      storeDescription: storeDescription,
+      storeBannerPhoto: (storeBannerUrl != null && storeBannerUrl.isNotEmpty) ? storeBannerUrl : _currentUser.storeBannerPhoto,
     );
-    if (ok) {
-      await refreshOrders();
-      await refreshSellerFinancials();
-    } else {
-      String? payStatus;
-      if (newStatus == OrderStatus.completed) {
-        payStatus = 'Lunas';
+
+    // 2. Update matching store in _stores
+    final currentStore = currentSellerStore;
+    for (int i = 0; i < _stores.length; i++) {
+      final s = _stores[i];
+      if ((currentStore != null && s.id == currentStore.id) ||
+          (_currentUser.dbStoreId != null && s.dbStoreId == _currentUser.dbStoreId) ||
+          s.name.trim().toLowerCase() == storeName.trim().toLowerCase()) {
+        _stores[i] = s.copyWith(
+          name: storeName,
+          faculty: storeFaculty,
+          location: storeLocation,
+          description: storeDescription,
+          logoUrl: (storeLogoUrl != null && storeLogoUrl.isNotEmpty) ? storeLogoUrl : s.logoUrl,
+          bannerUrl: (storeBannerUrl != null && storeBannerUrl.isNotEmpty) ? storeBannerUrl : s.bannerUrl,
+        );
       }
-      _mutateOrderStatusLocally(orderCode, newStatus, paymentStatus: payStatus);
     }
-    return ok;
+
+    // 3. Persist to DB if connected
+    if (_currentUser.dbUserId != null && _isDbConnected) {
+      final ok = await _dbService.updateSellerStoreProfile(
+        userId: _currentUser.dbUserId!,
+        storeId: _currentUser.dbStoreId,
+        sellerName: sellerName,
+        phoneNumber: phoneNumber,
+        avatarUrl: avatarUrl,
+        storeName: storeName,
+        storeFaculty: storeFaculty,
+        storeLocation: storeLocation,
+        storeDescription: storeDescription,
+        storeLogoUrl: storeLogoUrl,
+        storeBannerUrl: storeBannerUrl,
+      );
+      if (ok) {
+        await _syncStores();
+        await _syncUserData();
+      }
+    }
+
+    notifyListeners();
+    return true;
   }
 
   void updateOrderStatus(String orderId, OrderStatus status) {
@@ -2602,100 +2828,202 @@ class AppState extends ChangeNotifier {
   }
 
   // ==========================================
-  // 4. CHAT & PERCAKAPAN
+  // 4. DIRECT MESSAGE (DM) RESMI LUWE!
   // ==========================================
   List<ConversationModel> _conversations = [];
-  List<ConversationModel> get conversations => _conversations;
-
   ConversationModel? _activeConversation;
-  ConversationModel? get activeConversation => _activeConversation;
-
-  final List<ChatMessageModel> _chatMessages = [
-    ChatMessageModel(
-      id: 'msg_01',
-      senderId: 'seller_adistya',
-      senderName: 'Adistya (Warung Sambal Kampus)',
-      message: 'Halo kak! Pesanan Paket Ayam Geprek sedang kami siapkan yaa. Cabai rawitnya dibuat pedas level 2 sesuai request.',
-      timestamp: DateTime.now().subtract(const Duration(minutes: 12)),
-      isMe: false,
-    ),
-    ChatMessageModel(
-      id: 'msg_02',
-      senderId: 'user_hafidz',
-      senderName: 'Hafidz Ahmad',
-      message: 'Siap kak, nanti kalau sudah selesai langsung diantar ke Lantai 2 Gedung Giri Santoso ya, saya di depan Lab RPL.',
-      timestamp: DateTime.now().subtract(const Duration(minutes: 9)),
-      isMe: true,
-    ),
-  ];
-
   List<ChatMessageModel> _activeChatMessages = [];
-  List<ChatMessageModel> get chatMessages {
-    if (_activeChatMessages.isNotEmpty) return _activeChatMessages;
-    return _chatMessages;
+  bool _isLoadingChat = false;
+  bool get isLoadingChat => _isLoadingChat;
+  String? _chatError;
+  String? get chatError => _chatError;
+
+  List<ConversationModel> get conversations {
+    if (_conversations.isEmpty && _isLoggedIn) {
+      refreshConversations();
+    }
+    return _conversations;
+  }
+
+  ConversationModel? get activeConversation => _activeConversation;
+  List<ChatMessageModel> get chatMessages => _activeChatMessages;
+
+  int get totalUnreadMessages {
+    if (!_isLoggedIn) return 0;
+    if (_activeRole == UserRole.buyer) {
+      return _dbService.getUnreadCountForBuyer(_currentUser.dbUserId ?? 1);
+    } else {
+      final store = currentSellerStore;
+      final storeId = store?.id ?? (_currentUser.dbStoreId != null ? 'store_${_currentUser.dbStoreId}' : 'store_1');
+      final sellerId = _currentUser.dbUserId ?? 2;
+      return _dbService.getUnreadCountForStore(storeId, sellerId);
+    }
+  }
+
+  int getUnreadCountForOrder(String orderId) {
+    if (!_isLoggedIn) return 0;
+    final match = _conversations.where((c) => c.orderId == orderId).firstOrNull;
+    return match?.unreadCount ?? 0;
   }
 
   Future<void> refreshConversations() async {
-    if (_currentUser.dbUserId != null && _isDbConnected) {
-      _conversations = await _dbService.fetchUserConversations(_currentUser.dbUserId!);
-      if (_activeConversation != null) {
-        final match = _conversations.where((c) => c.id == _activeConversation!.id).firstOrNull;
-        if (match != null) {
-          _activeConversation = match;
-          await loadMessagesForActiveConversation();
-        } else if (_conversations.isNotEmpty) {
-          _activeConversation = _conversations.first;
-          await loadMessagesForActiveConversation();
-        }
+    if (!_isLoggedIn) {
+      _conversations = [];
+      _activeConversation = null;
+      _activeChatMessages = [];
+      notifyListeners();
+      return;
+    }
+
+    if (_activeRole == UserRole.buyer) {
+      final buyerId = _currentUser.dbUserId ??
+          (int.tryParse(_currentUser.id.replaceAll(RegExp(r'[^0-9]'), '')) ??
+              (_currentUser.id == 'user_hafidz' ? 1 : 99999));
+      _conversations = await _dbService.fetchBuyerConversations(buyerId);
+    } else {
+      final store = currentSellerStore;
+      final storeId = store?.id ?? (_currentUser.dbStoreId != null ? 'store_${_currentUser.dbStoreId}' : 'store_1');
+      final sellerId = _currentUser.dbUserId ?? (_currentUser.id == 'user_adistya' ? 2 : 99998);
+      _conversations = await _dbService.fetchStoreConversations(storeId, sellerId);
+    }
+
+    _conversations.sort((a, b) => b.lastMessageAt.compareTo(a.lastMessageAt));
+
+    if (_activeConversation != null) {
+      final match = _conversations.where((c) => c.id == _activeConversation!.id).firstOrNull;
+      if (match != null) {
+        _activeConversation = match;
+        await loadMessagesForActiveConversation();
       } else if (_conversations.isNotEmpty) {
         _activeConversation = _conversations.first;
         await loadMessagesForActiveConversation();
+      } else {
+        _activeConversation = null;
+        _activeChatMessages = [];
       }
-      notifyListeners();
+    } else if (_conversations.isNotEmpty) {
+      _activeConversation = _conversations.first;
+      await loadMessagesForActiveConversation();
     }
+
+    notifyListeners();
   }
 
   Future<void> selectConversation(ConversationModel convo) async {
     _activeConversation = convo;
+    final readerId = _currentUser.dbUserId ??
+        (int.tryParse(_currentUser.id.replaceAll(RegExp(r'[^0-9]'), '')) ??
+            (_currentUser.id == 'user_adistya' ? 2 : 1));
+    await _dbService.markConversationAsRead(convo.id, readerId);
     await loadMessagesForActiveConversation();
-    notifyListeners();
+    await refreshConversations();
   }
 
   Future<void> loadMessagesForActiveConversation() async {
-    if (_activeConversation != null && _currentUser.dbUserId != null && _isDbConnected) {
-      _activeChatMessages = await _dbService.fetchMessages(_activeConversation!.id, _currentUser.dbUserId!);
-      notifyListeners();
-    }
+    if (_activeConversation == null) return;
+    _isLoadingChat = true;
+    final currentUserId = _currentUser.dbUserId ??
+        (int.tryParse(_currentUser.id.replaceAll(RegExp(r'[^0-9]'), '')) ??
+            (_currentUser.id == 'user_adistya' ? 2 : (_currentUser.id == 'user_hafidz' ? 1 : 99999)));
+    _activeChatMessages = await _dbService.fetchMessages(_activeConversation!.id, currentUserId);
+    _isLoadingChat = false;
+    notifyListeners();
   }
 
-  Future<void> sendChatMessage(String message) async {
-    if (message.trim().isEmpty) return;
-    if (_activeConversation != null && _currentUser.dbUserId != null && _isDbConnected) {
-      final newMsg = await _dbService.sendMessage(
-        conversationId: _activeConversation!.id,
-        senderId: _currentUser.dbUserId!,
-        senderName: _currentUser.name,
-        text: message.trim(),
-      );
-      if (newMsg != null) {
-        _activeChatMessages.add(newMsg);
-        await refreshConversations();
-        notifyListeners();
-        return;
-      }
+  Future<bool> sendChatMessage(String message, {String? orderId}) async {
+    final clean = message.trim();
+    if (clean.isEmpty || _activeConversation == null) return false;
+
+    final currentUserId = _currentUser.dbUserId ??
+        (int.tryParse(_currentUser.id.replaceAll(RegExp(r'[^0-9]'), '')) ??
+            (_currentUser.id == 'user_adistya' ? 2 : (_currentUser.id == 'user_hafidz' ? 1 : 99999)));
+    final senderName = _activeRole == UserRole.seller
+        ? (currentSellerStore?.name ?? (_currentUser.storeName.isNotEmpty ? _currentUser.storeName : 'Penjual LuWe'))
+        : _currentUser.name;
+
+    final msg = await _dbService.sendMessage(
+      conversationId: _activeConversation!.id,
+      senderId: currentUserId,
+      senderName: senderName,
+      text: clean,
+      orderId: orderId ?? _activeConversation!.orderId,
+    );
+
+    if (msg != null) {
+      _activeChatMessages.add(msg);
+      await refreshConversations();
+      notifyListeners();
+      return true;
+    }
+    return false;
+  }
+
+  /// Membuka atau membuat percakapan dengan Toko (Mode Pembeli)
+  Future<ConversationModel> openOrCreateConversationWithStore({
+    required String storeId,
+    String? orderId,
+  }) async {
+    if (!_isLoggedIn) {
+      throw StateError('Silakan login terlebih dahulu untuk mengirim pesan ke toko.');
     }
 
-    _activeChatMessages.add(
-      ChatMessageModel(
-        id: 'msg_${DateTime.now().millisecondsSinceEpoch}',
-        senderId: _currentUser.id,
-        senderName: _currentUser.name,
-        message: message.trim(),
-        timestamp: DateTime.now(),
-        isMe: true,
-      ),
+    final store = _stores.where((s) => s.id == storeId).firstOrNull;
+    final storeName = store?.name ?? 'Toko Danusan LuWe';
+    final buyerId = _currentUser.dbUserId ??
+        (int.tryParse(_currentUser.id.replaceAll(RegExp(r'[^0-9]'), '')) ??
+            (_currentUser.id == 'user_hafidz' ? 1 : 99999));
+    final sellerId = store?.sellerId ?? (storeId == 'store_1' ? 2 : 3);
+    final buyerName = _currentUser.name;
+
+    final convo = await _dbService.getOrCreateConversation(
+      buyerId: buyerId,
+      sellerId: sellerId,
+      storeId: storeId,
+      storeName: storeName,
+      buyerName: buyerName,
+      orderId: orderId,
+      storeLogo: store?.logoUrl,
+      storeLocation: store?.location,
     );
+
+    _activeRole = UserRole.buyer;
+    _currentTabIndex = 3;
+    await selectConversation(convo);
     notifyListeners();
+    return convo;
+  }
+
+  /// Membuka atau membuat percakapan dengan Pembeli (Mode Penjual)
+  Future<ConversationModel> openOrCreateConversationWithBuyer({
+    required int buyerId,
+    required String buyerName,
+    required String storeId,
+    String? orderId,
+  }) async {
+    if (!_isLoggedIn || !_currentUser.isSellerApproved) {
+      throw StateError('Hanya penjual terverifikasi yang dapat membuka pesan pembeli.');
+    }
+
+    final store = currentSellerStore;
+    final storeName = store?.name ?? _currentUser.storeName;
+    final sellerId = _currentUser.dbUserId ?? 2;
+
+    final convo = await _dbService.getOrCreateConversation(
+      buyerId: buyerId,
+      sellerId: sellerId,
+      storeId: store?.id ?? storeId,
+      storeName: storeName,
+      buyerName: buyerName,
+      orderId: orderId,
+      storeLogo: store?.logoUrl,
+      storeLocation: store?.location,
+    );
+
+    _activeRole = UserRole.seller;
+    _currentTabIndex = 3;
+    await selectConversation(convo);
+    notifyListeners();
+    return convo;
   }
 
   // ==========================================

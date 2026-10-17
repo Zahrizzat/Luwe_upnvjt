@@ -29,9 +29,7 @@ class _ProductDetailDialogState extends State<ProductDetailDialog> {
   @override
   void initState() {
     super.initState();
-    _selectedSpiceLevel = widget.item.availableSpiceLevels.isNotEmpty
-        ? widget.item.availableSpiceLevels[1]
-        : 'Level 1 (Sedang)';
+    _selectedSpiceLevel = '';
   }
 
   @override
@@ -343,36 +341,7 @@ class _ProductDetailDialogState extends State<ProductDetailDialog> {
                               ),
                               const Divider(height: 20),
 
-                              // Spice level selector
-                              const Text(
-                                'Pilih Tingkat Kepedasan / Varian:',
-                                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
-                              ),
-                              const SizedBox(height: 8),
-                              Wrap(
-                                spacing: 8,
-                                runSpacing: 8,
-                                children: item.availableSpiceLevels.map((lvl) {
-                                  final isSelected = _selectedSpiceLevel == lvl;
-                                  return ChoiceChip(
-                                    label: Text(lvl),
-                                    selected: isSelected,
-                                    onSelected: (val) {
-                                      if (val) setState(() => _selectedSpiceLevel = lvl);
-                                    },
-                                    selectedColor: AppColors.primaryLight,
-                                    labelStyle: TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w600,
-                                      color: isSelected ? AppColors.primary : AppColors.textPrimary,
-                                    ),
-                                    side: BorderSide(
-                                      color: isSelected ? AppColors.primary : AppColors.surfaceBorder,
-                                    ),
-                                  );
-                                }).toList(),
-                              ),
-                              const SizedBox(height: 14),
+                              // Kustomisasi tingkat kepedasan telah dihapus sesuai revisi LuWe!
 
                               // Notes input
                               const Text(

@@ -16,7 +16,9 @@ import '../models/product_rating_model.dart';
 class DatabaseService {
   static final DatabaseService _instance = DatabaseService._internal();
   factory DatabaseService() => _instance;
-  DatabaseService._internal();
+  DatabaseService._internal() {
+    _initMockConversationsAndMessages();
+  }
 
   MySQLConnection? _conn;
   MySQLConnection? get connection => _conn;
@@ -24,16 +26,22 @@ class DatabaseService {
   bool get isConnected => _isConnected;
 
   Future<void> resetTestState() async {
+    _initMockConversationsAndMessages();
     if (_conn == null || !_conn!.connected) {
       final ok = await connect();
       if (!ok) return;
     }
     try {
       await _conn!.execute("UPDATE users SET role = 'pembeli' WHERE email = 'hafidz@student.upnjatim.ac.id'");
+      await _conn!.execute("UPDATE stores SET store_status = 'buka' WHERE store_id = 1");
       await _conn!.execute("DELETE FROM store_withdrawals WHERE seller_id = 2");
       await _conn!.execute("UPDATE products SET price = 15000, product_name = 'Ayam Geprek Sambal Bawang UPNVJT', stock_quantity = 25, availability = 'tersedia' WHERE product_id = 1");
       await _conn!.execute("DELETE FROM products WHERE product_name = 'Roti Panggang Khas FEB' OR slug LIKE '%roti-panggang%'");
       await _conn!.execute("DELETE FROM stores WHERE store_name LIKE '%Tester%' OR store_name LIKE '%Rizky Baru%'");
+      await _conn!.execute("DELETE FROM messages WHERE conversation_id > 1 OR order_id LIKE 'ORD-TEST-%'");
+      await _conn!.execute("DELETE FROM conversations WHERE conversation_id > 1 OR order_id LIKE 'ORD-TEST-%'");
+      await _conn!.execute("DELETE FROM messages WHERE conversation_id = 1 AND message_id > 2");
+      await _conn!.execute("UPDATE conversations SET last_message = 'Halo kak! Mau tanya apakah ayam geprek sambal bawang masih ready?', last_message_at = CURRENT_TIMESTAMP, order_id = 'ORD-20261017-001' WHERE conversation_id = 1");
     } catch (_) {}
   }
 
@@ -174,6 +182,104 @@ class DatabaseService {
           UNIQUE KEY uq_user_prod_order (user_id, product_id, order_code)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
       ''');
+
+      // 4. Migrate stores columns (faculty, banner_photo)
+      try {
+        final storeColRes = await _conn!.execute(
+          "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'stores'",
+        );
+        final existingStoreCols = storeColRes.rows.map((r) => r.assoc()['COLUMN_NAME']?.toLowerCase() ?? '').toSet();
+        if (!existingStoreCols.contains('faculty')) {
+          await _conn!.execute("ALTER TABLE stores ADD COLUMN faculty VARCHAR(150) DEFAULT 'Fakultas Ilmu Komputer (FIK)' AFTER description");
+        }
+        if (!existingStoreCols.contains('banner_photo')) {
+          await _conn!.execute("ALTER TABLE stores ADD COLUMN banner_photo TEXT DEFAULT NULL AFTER store_photo");
+        }
+      } catch (_) {}
+
+      // 5. Migrate orders columns (is_stock_deducted)
+      try {
+        final orderColRes = await _conn!.execute(
+          "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'orders'",
+        );
+        final existingOrderCols = orderColRes.rows.map((r) => r.assoc()['COLUMN_NAME']?.toLowerCase() ?? '').toSet();
+        if (!existingOrderCols.contains('is_stock_deducted')) {
+          await _conn!.execute("ALTER TABLE orders ADD COLUMN is_stock_deducted TINYINT(1) DEFAULT 0 AFTER order_status");
+        }
+      } catch (_) {}
+
+      // 6. Migrate Direct Message (conversations & messages) tables
+      try {
+        await _conn!.execute('''
+          CREATE TABLE IF NOT EXISTS conversations (
+            conversation_id INT AUTO_INCREMENT PRIMARY KEY,
+            buyer_id INT NOT NULL,
+            seller_id INT NOT NULL,
+            store_id VARCHAR(100) DEFAULT NULL,
+            store_name VARCHAR(150) DEFAULT NULL,
+            buyer_name VARCHAR(150) DEFAULT NULL,
+            order_id VARCHAR(100) DEFAULT NULL,
+            last_message TEXT DEFAULT NULL,
+            last_message_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+          ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+        ''');
+
+        await _conn!.execute('''
+          CREATE TABLE IF NOT EXISTS messages (
+            message_id INT AUTO_INCREMENT PRIMARY KEY,
+            conversation_id INT NOT NULL,
+            sender_id INT NOT NULL,
+            sender_name VARCHAR(150) DEFAULT NULL,
+            message_text TEXT NOT NULL,
+            order_id VARCHAR(100) DEFAULT NULL,
+            is_read TINYINT(1) DEFAULT 0,
+            sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+          ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+        ''');
+
+        // Check columns in conversations
+        final convoColRes = await _conn!.execute(
+          "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'conversations'",
+        );
+        final existingConvoCols = convoColRes.rows.map((r) => r.assoc()['COLUMN_NAME']?.toLowerCase() ?? '').toSet();
+        if (!existingConvoCols.contains('store_id')) {
+          await _conn!.execute("ALTER TABLE conversations ADD COLUMN store_id VARCHAR(100) DEFAULT NULL AFTER seller_id");
+        }
+        if (!existingConvoCols.contains('store_name')) {
+          await _conn!.execute("ALTER TABLE conversations ADD COLUMN store_name VARCHAR(150) DEFAULT NULL AFTER store_id");
+        }
+        if (!existingConvoCols.contains('buyer_name')) {
+          await _conn!.execute("ALTER TABLE conversations ADD COLUMN buyer_name VARCHAR(150) DEFAULT NULL AFTER store_name");
+        }
+        if (!existingConvoCols.contains('order_id')) {
+          await _conn!.execute("ALTER TABLE conversations ADD COLUMN order_id VARCHAR(100) DEFAULT NULL AFTER buyer_name");
+        }
+        if (!existingConvoCols.contains('last_message')) {
+          await _conn!.execute("ALTER TABLE conversations ADD COLUMN last_message TEXT DEFAULT NULL AFTER order_id");
+        }
+        if (!existingConvoCols.contains('last_message_at')) {
+          await _conn!.execute("ALTER TABLE conversations ADD COLUMN last_message_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP AFTER last_message");
+        }
+        if (!existingConvoCols.contains('created_at')) {
+          await _conn!.execute("ALTER TABLE conversations ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP AFTER last_message_at");
+        }
+
+        // Check columns in messages
+        final msgColRes = await _conn!.execute(
+          "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'messages'",
+        );
+        final existingMsgCols = msgColRes.rows.map((r) => r.assoc()['COLUMN_NAME']?.toLowerCase() ?? '').toSet();
+        if (!existingMsgCols.contains('order_id')) {
+          await _conn!.execute("ALTER TABLE messages ADD COLUMN order_id VARCHAR(100) DEFAULT NULL AFTER message_text");
+        }
+        if (!existingMsgCols.contains('is_read')) {
+          await _conn!.execute("ALTER TABLE messages ADD COLUMN is_read TINYINT(1) DEFAULT 0 AFTER order_id");
+        }
+        if (!existingMsgCols.contains('sender_name')) {
+          await _conn!.execute("ALTER TABLE messages ADD COLUMN sender_name VARCHAR(150) DEFAULT NULL AFTER sender_id");
+        }
+      } catch (_) {}
     } catch (e) {
       debugPrint('[DatabaseService Migration Error] $e');
     }
@@ -250,8 +356,8 @@ class DatabaseService {
             'seller_id': sellerId,
             'name': 'Warung Sambal Kampus UPN',
             'slug': 'warung-sambal-kampus-upn',
-            'desc': 'Kuliner pedas nikmat khas mahasiswa UPNVJT Kantin Giri Reksa.',
-            'loc': 'Kantin Barat • Gedung Giri Reksa',
+            'desc': 'Kuliner pedas nikmat karya mahasiswa wirausaha UPN "Veteran" Jawa Timur.',
+            'loc': 'Selasar Gedung Bersama FIK Lt. 1',
             'status': 'buka',
           },
         );
@@ -302,9 +408,9 @@ class DatabaseService {
           {
             'store_id': storeId,
             'category_id': 1,
-            'name': 'Paket Hemat: Ayam Krispi + Es Teh Jumbo',
-            'slug': 'paket-hemat-ayam-krispi-es-teh',
-            'desc': 'Paket kenyang andalan mahasiswa tanggal tua: Nasi putih pulen, ayam krispi saus lava pedas manis, plus free Es Teh Jumbo.',
+            'name': 'Ayam Krispi Saus Lava + Es Teh Jumbo',
+            'slug': 'ayam-krispi-saus-lava-es-teh',
+            'desc': 'Menu kenyang andalan mahasiswa tanggal tua: Nasi putih pulen, ayam krispi saus lava pedas manis, plus free Es Teh Jumbo.',
             'price': 18000,
             'stock': 30,
             'img': 'https://images.unsplash.com/photo-1562967914-608f82629710?auto=format&fit=crop&w=800&q=80',
@@ -728,8 +834,8 @@ class DatabaseService {
             description: desc,
             faculty: faculty,
             facultyShort: facultyShort,
-            organization: isDanusan ? 'Danusan Mahasiswa $facultyShort' : 'Kantin Kampus UPNVJT',
-            categories: const ['Makanan Utama', 'Minuman Segar', 'Cemilan & Snack', 'Paket Hemat'],
+            organization: isDanusan ? 'Danusan Mahasiswa $facultyShort' : 'Usaha Mahasiswa UPNVJT',
+            categories: const ['Makanan Utama', 'Minuman Segar', 'Cemilan & Snack'],
             location: loc,
             bannerUrl: photo,
             logoUrl: photo,
@@ -1146,12 +1252,13 @@ class DatabaseService {
 
       // Insert order items
       for (final it in order.items) {
+        final prodId = it.item.dbProductId ?? int.tryParse(it.item.id.replaceAll(RegExp(r'[^0-9]'), '')) ?? 1;
         await _conn!.execute(
           'INSERT INTO order_items (order_id, product_id, product_name, unit_price, quantity, line_total) '
           'VALUES (:orderId, :pId, :name, :price, :qty, :tot)',
           {
             'orderId': orderId,
-            'pId': it.item.dbProductId,
+            'pId': prodId,
             'name': it.item.name,
             'price': it.item.price,
             'qty': it.quantity,
@@ -1524,13 +1631,13 @@ class DatabaseService {
   // ==========================================
 
   OrderStatus _mapDbStatusToOrderStatus(String? dbStatus) {
-    switch (dbStatus) {
+    switch (dbStatus?.toLowerCase().trim()) {
       case 'menunggu_konfirmasi':
         return OrderStatus.waitingConfirmation;
       case 'diterima':
       case 'diproses':
-        return OrderStatus.processing;
       case 'siap_diambil':
+      case 'siap_diantar':
       case 'dalam_pengantaran':
         return OrderStatus.readyForPickupOrDelivery;
       case 'selesai':
@@ -1619,6 +1726,7 @@ class DatabaseService {
           createdAt: DateTime.tryParse(a['ordered_at'] ?? '') ?? DateTime.now(),
           notes: a['buyer_note'],
           cancellationReason: a['cancellation_reason'],
+          isStockDeducted: (int.tryParse(a['is_stock_deducted'] ?? '0') ?? 0) == 1,
         ),
       );
     }
@@ -1707,27 +1815,161 @@ class DatabaseService {
   Future<bool> sellerUpdateOrderStatus({required String orderCode, required OrderStatus status, required int storeId}) async {
     if (_conn == null || !_conn!.connected) return false;
     try {
-      String statusStr = 'diproses';
       if (status == OrderStatus.readyForPickupOrDelivery) {
-        statusStr = 'siap_diambil';
-      } else if (status == OrderStatus.completed) {
-        statusStr = 'selesai';
+        // Confirmation: Validate stock and deduct once
+        final orderRes = await _conn!.execute(
+          'SELECT order_id, order_status, COALESCE(is_stock_deducted, 0) AS is_deducted FROM orders WHERE order_code = :code AND store_id = :storeId',
+          {'code': orderCode, 'storeId': storeId},
+        );
+        if (orderRes.rows.isEmpty) return false;
+        final oRow = orderRes.rows.first.assoc();
+        final oId = int.tryParse(oRow['order_id'] ?? '0') ?? 0;
+        final isDeducted = (int.tryParse(oRow['is_deducted'] ?? '0') ?? 0) == 1;
+
+        if (!isDeducted) {
+          // 1. Validate stock availability before deducting
+          final itemsRes = await _conn!.execute(
+            'SELECT oi.product_id, oi.quantity, p.stock_quantity FROM order_items oi JOIN products p ON oi.product_id = p.product_id WHERE oi.order_id = :oId',
+            {'oId': oId},
+          );
+          for (final r in itemsRes.rows) {
+            final assoc = r.assoc();
+            final curStock = int.tryParse(assoc['stock_quantity'] ?? '0') ?? 0;
+            final reqQty = int.tryParse(assoc['quantity'] ?? '0') ?? 0;
+            if (curStock < reqQty) {
+              return false; // Insufficient stock to confirm
+            }
+          }
+          // 2. Deduct stock atomically
+          await _conn!.execute(
+            'UPDATE products p JOIN order_items oi ON p.product_id = oi.product_id '
+            'SET p.stock_quantity = GREATEST(0, p.stock_quantity - oi.quantity), '
+            'p.availability = IF(p.stock_quantity - oi.quantity > 0, "tersedia", "habis") '
+            'WHERE oi.order_id = :oId',
+            {'oId': oId},
+          );
+        }
+
+        await _conn!.execute(
+          'UPDATE orders SET order_status = "siap_diambil", is_stock_deducted = 1 WHERE order_code = :code AND store_id = :storeId',
+          {'code': orderCode, 'storeId': storeId},
+        );
+        return true;
       } else if (status == OrderStatus.cancelled) {
-        statusStr = 'ditolak';
-      }
+        // Rejection / Cancellation: Restore stock if previously deducted
+        final orderRes = await _conn!.execute(
+          'SELECT order_id, order_status, COALESCE(is_stock_deducted, 0) AS is_deducted FROM orders WHERE order_code = :code AND store_id = :storeId',
+          {'code': orderCode, 'storeId': storeId},
+        );
+        if (orderRes.rows.isNotEmpty) {
+          final oRow = orderRes.rows.first.assoc();
+          final oId = int.tryParse(oRow['order_id'] ?? '0') ?? 0;
+          final isDeducted = (int.tryParse(oRow['is_deducted'] ?? '0') ?? 0) == 1;
+          if (isDeducted) {
+            await _conn!.execute(
+              'UPDATE products p JOIN order_items oi ON p.product_id = oi.product_id '
+              'SET p.stock_quantity = p.stock_quantity + oi.quantity, '
+              'p.availability = "tersedia" '
+              'WHERE oi.order_id = :oId',
+              {'oId': oId},
+            );
+          }
+        }
 
-      await _conn!.execute(
-        'UPDATE orders SET order_status = :st WHERE order_code = :code AND store_id = :storeId',
-        {'st': statusStr, 'code': orderCode, 'storeId': storeId},
-      );
-
-      if (status == OrderStatus.completed) {
+        await _conn!.execute(
+          'UPDATE orders SET order_status = "ditolak", is_stock_deducted = 0 WHERE order_code = :code AND store_id = :storeId',
+          {'code': orderCode, 'storeId': storeId},
+        );
+        return true;
+      } else if (status == OrderStatus.completed) {
+        // Completion: Do NOT deduct stock again, mark payment lunas
+        await _conn!.execute(
+          'UPDATE orders SET order_status = "selesai" WHERE order_code = :code AND store_id = :storeId',
+          {'code': orderCode, 'storeId': storeId},
+        );
         await _conn!.execute(
           'UPDATE payments p JOIN orders o ON p.order_id = o.order_id '
           'SET p.payment_status = "berhasil" WHERE o.order_code = :code',
           {'code': orderCode},
         );
+        return true;
+      } else {
+        await _conn!.execute(
+          'UPDATE orders SET order_status = "menunggu_konfirmasi" WHERE order_code = :code AND store_id = :storeId',
+          {'code': orderCode, 'storeId': storeId},
+        );
+        return true;
       }
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<bool> updateSellerStoreProfile({
+    int? storeId,
+    required int userId,
+    required String storeName,
+    required String storeLocation,
+    required String storeDescription,
+    required String storeFaculty,
+    String? storePhoto,
+    String? bannerPhoto,
+    String? storeLogoUrl,
+    String? storeBannerUrl,
+    required String sellerName,
+    required String phoneNumber,
+    String? avatarUrl,
+  }) async {
+    if (_conn == null || !_conn!.connected) return false;
+    try {
+      await _migrateTables();
+      final photo = (storeLogoUrl != null && storeLogoUrl.trim().isNotEmpty)
+          ? storeLogoUrl.trim()
+          : ((storePhoto != null && storePhoto.trim().isNotEmpty) ? storePhoto.trim() : null);
+      final banner = (storeBannerUrl != null && storeBannerUrl.trim().isNotEmpty)
+          ? storeBannerUrl.trim()
+          : ((bannerPhoto != null && bannerPhoto.trim().isNotEmpty) ? bannerPhoto.trim() : null);
+
+      if (storeId != null) {
+        await _conn!.execute(
+          'UPDATE stores SET store_name = :name, store_location = :loc, description = :desc, '
+          'faculty = :fac, store_photo = COALESCE(:photo, store_photo), banner_photo = COALESCE(:banner, banner_photo) WHERE store_id = :storeId',
+          {
+            'name': storeName.trim(),
+            'loc': storeLocation.trim(),
+            'desc': storeDescription.trim(),
+            'fac': storeFaculty.trim(),
+            'photo': photo,
+            'banner': banner,
+            'storeId': storeId,
+          },
+        );
+      } else {
+        await _conn!.execute(
+          'UPDATE stores SET store_name = :name, store_location = :loc, description = :desc, '
+          'faculty = :fac, store_photo = COALESCE(:photo, store_photo), banner_photo = COALESCE(:banner, banner_photo) WHERE seller_id = :userId',
+          {
+            'name': storeName.trim(),
+            'loc': storeLocation.trim(),
+            'desc': storeDescription.trim(),
+            'fac': storeFaculty.trim(),
+            'photo': photo,
+            'banner': banner,
+            'userId': userId,
+          },
+        );
+      }
+
+      await _conn!.execute(
+        'UPDATE users SET full_name = :name, phone = :phone, profile_photo = COALESCE(:photo, profile_photo) WHERE user_id = :userId',
+        {
+          'name': sellerName.trim(),
+          'phone': phoneNumber.trim(),
+          'photo': (avatarUrl != null && avatarUrl.trim().isNotEmpty) ? avatarUrl.trim() : null,
+          'userId': userId,
+        },
+      );
+
       return true;
     } catch (_) {
       return false;
@@ -1735,22 +1977,75 @@ class DatabaseService {
   }
 
   // ==========================================
-  // 4. CHAT & DISKUSI TERHUBUNG AKUN
+  // 4. DIRECT MESSAGE (DM) RESMI LUWE!
   // ==========================================
+
+  List<ConversationModel> _mockConversations = [];
+  List<ChatMessageModel> _mockMessages = [];
+
+  void _initMockConversationsAndMessages() {
+    _mockConversations = [
+      ConversationModel(
+        id: 1,
+        buyerId: 1,
+        sellerId: 2,
+        storeId: 'store_1',
+        storeName: 'Danus SIFO Mandiri',
+        buyerName: 'Hafidz Ahmad',
+        otherPartyName: 'Danus SIFO Mandiri',
+        otherPartySubtitle: 'Fakultas Ilmu Komputer (FIK) • Stan Mandiri',
+        otherPartyAvatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=400&q=80',
+        lastMessage: 'Halo kak! Mau tanya apakah ayam geprek sambal bawang masih ready?',
+        lastMessageAt: DateTime.now().subtract(const Duration(minutes: 10)),
+        orderId: 'ORD-20261017-001',
+        unreadCount: 0,
+      ),
+    ];
+
+    _mockMessages = [
+      ChatMessageModel(
+        id: 'msg_init_1',
+        dbMessageId: 1,
+        conversationId: 1,
+        senderId: 'user_1',
+        senderName: 'Hafidz Ahmad',
+        message: 'Halo kak! Mau tanya apakah ayam geprek sambal bawang masih ready?',
+        timestamp: DateTime.now().subtract(const Duration(minutes: 10)),
+        isMe: false,
+        orderId: 'ORD-20261017-001',
+        isRead: true,
+      ),
+      ChatMessageModel(
+        id: 'msg_init_2',
+        dbMessageId: 2,
+        conversationId: 1,
+        senderId: 'user_2',
+        senderName: 'Danus SIFO Mandiri',
+        message: 'Halo Hafidz! Masih ready fresh kak, silakan diorder langsung yaa!',
+        timestamp: DateTime.now().subtract(const Duration(minutes: 8)),
+        isMe: false,
+        orderId: 'ORD-20261017-001',
+        isRead: true,
+      ),
+    ];
+  }
 
   Future<List<ConversationModel>> fetchUserConversations(int userId) async {
     if (_conn == null || !_conn!.connected) {
       final ok = await connect();
-      if (!ok) return [];
+      if (!ok) {
+        return _mockConversations.where((c) => c.buyerId == userId || c.sellerId == userId).toList();
+      }
     }
     try {
       final res = await _conn!.execute(
         'SELECT c.*, '
         'b.full_name AS buyer_name, b.profile_photo AS buyer_photo, '
         's.full_name AS seller_name, s.profile_photo AS seller_photo, '
-        'st.store_name, st.store_location, '
+        'st.store_id AS st_store_id, st.store_name, st.store_location, '
         '(SELECT message_text FROM messages WHERE conversation_id = c.conversation_id ORDER BY message_id DESC LIMIT 1) AS last_msg, '
-        '(SELECT sent_at FROM messages WHERE conversation_id = c.conversation_id ORDER BY message_id DESC LIMIT 1) AS last_msg_time '
+        '(SELECT sent_at FROM messages WHERE conversation_id = c.conversation_id ORDER BY message_id DESC LIMIT 1) AS last_msg_time, '
+        '(SELECT COUNT(*) FROM messages WHERE conversation_id = c.conversation_id AND sender_id != :userId AND is_read = 0) AS unread_cnt '
         'FROM conversations c '
         'JOIN users b ON c.buyer_id = b.user_id '
         'JOIN users s ON c.seller_id = s.user_id '
@@ -1768,74 +2063,243 @@ class DatabaseService {
         final sellerId = int.tryParse(a['seller_id'] ?? '0') ?? 0;
         final isMeBuyer = userId == buyerId;
 
-        final otherName = isMeBuyer
-            ? (a['store_name']?.isNotEmpty == true ? a['store_name']! : a['seller_name'] ?? 'Penjual Luwe')
-            : (a['buyer_name'] ?? 'Mahasiswa UPN');
+        final rawStoreId = a['store_id']?.toString().trim() ?? '';
+        final stStoreId = a['st_store_id']?.toString().trim() ?? '';
+        final storeId = rawStoreId.isNotEmpty
+            ? rawStoreId
+            : (stStoreId.isNotEmpty ? (stStoreId.startsWith('store_') ? stStoreId : 'store_$stStoreId') : 'store_1');
+        final storeName = a['store_name']?.isNotEmpty == true ? a['store_name']! : (a['c_store_name'] ?? 'Toko Danusan LuWe');
+        final buyerName = a['buyer_name'] ?? 'Mahasiswa UPN';
+
+        final otherName = isMeBuyer ? storeName : buyerName;
         final otherSub = isMeBuyer
-            ? (a['store_location']?.isNotEmpty == true ? a['store_location']! : 'Stan Kuliner UPNVJT')
+            ? (a['store_location']?.isNotEmpty == true ? a['store_location']! : 'Stan Usaha Mandiri UPNVJT')
             : 'Pembeli Mahasiswa UPN';
         final otherAvatar = isMeBuyer
             ? (a['seller_photo'] ?? 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=400&q=80')
             : (a['buyer_photo'] ?? 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80');
+
+        final unread = int.tryParse(a['unread_cnt'] ?? '0') ?? 0;
 
         list.add(
           ConversationModel(
             id: cId,
             buyerId: buyerId,
             sellerId: sellerId,
+            storeId: storeId,
+            storeName: storeName,
+            buyerName: buyerName,
             otherPartyName: otherName,
             otherPartySubtitle: otherSub,
             otherPartyAvatar: otherAvatar,
             lastMessage: a['last_msg'] ?? 'Percakapan baru dimulai',
             lastMessageAt: DateTime.tryParse(a['last_msg_time'] ?? '') ?? DateTime.now(),
+            orderId: a['order_id'],
+            unreadCount: unread,
           ),
         );
       }
       return list;
     } catch (_) {
-      return [];
+      return _mockConversations.where((c) => c.buyerId == userId || c.sellerId == userId).toList();
     }
   }
 
-  Future<List<ChatMessageModel>> fetchMessages(int conversationId, int currentUserId) async {
-    if (_conn == null || !_conn!.connected) {
-      final ok = await connect();
-      if (!ok) return [];
+  Future<List<ConversationModel>> fetchBuyerConversations(int buyerId) async {
+    if (_conn != null && _conn!.connected) {
+      final list = await fetchUserConversations(buyerId);
+      return list.where((c) => c.buyerId == buyerId).toList();
     }
-    try {
-      final res = await _conn!.execute(
-        'SELECT m.*, u.full_name, u.role '
-        'FROM messages m '
-        'JOIN users u ON m.sender_id = u.user_id '
-        'WHERE m.conversation_id = :cId '
-        'ORDER BY m.message_id ASC',
-        {'cId': conversationId},
+    return _mockConversations.where((c) => c.buyerId == buyerId).map((c) {
+      final unread = _mockMessages
+          .where((m) => m.conversationId == c.id && m.senderId != 'user_$buyerId' && !m.isRead)
+          .length;
+      return c.copyWith(
+        otherPartyName: c.storeName.isNotEmpty ? c.storeName : c.otherPartyName,
+        unreadCount: unread,
       );
+    }).toList();
+  }
 
-      final List<ChatMessageModel> list = [];
-      for (final r in res.rows) {
-        final a = r.assoc();
-        final mId = int.tryParse(a['message_id'] ?? '0') ?? 0;
-        final senderId = int.tryParse(a['sender_id'] ?? '0') ?? 0;
-        final isMe = senderId == currentUserId;
+  Future<List<ConversationModel>> fetchStoreConversations(String storeId, int sellerId) async {
+    if (_conn != null && _conn!.connected) {
+      final list = await fetchUserConversations(sellerId);
+      return list.where((c) => (storeId.isNotEmpty ? c.storeId == storeId : true) && c.sellerId == sellerId).toList();
+    }
+    return _mockConversations.where((c) => (storeId.isNotEmpty ? c.storeId == storeId : true) && c.sellerId == sellerId).map((c) {
+      final unread = _mockMessages
+          .where((m) => m.conversationId == c.id && m.senderId != 'user_$sellerId' && !m.isRead)
+          .length;
+      return c.copyWith(
+        otherPartyName: c.buyerName.isNotEmpty ? c.buyerName : 'Pembeli Mahasiswa',
+        otherPartySubtitle: c.orderId != null && c.orderId!.isNotEmpty
+            ? 'Pesanan #${c.orderId}'
+            : 'Mahasiswa UPN "Veteran" Jatim',
+        unreadCount: unread,
+      );
+    }).toList();
+  }
 
-        list.add(
-          ChatMessageModel(
-            id: 'msg_$mId',
-            dbMessageId: mId,
-            conversationId: conversationId,
-            senderId: 'user_$senderId',
-            senderName: a['full_name'] ?? 'Pengguna',
-            message: a['message_text'] ?? '',
-            timestamp: DateTime.tryParse(a['sent_at'] ?? '') ?? DateTime.now(),
-            isMe: isMe,
-          ),
+  Future<ConversationModel> getOrCreateConversation({
+    required int buyerId,
+    required int sellerId,
+    required String storeId,
+    required String storeName,
+    required String buyerName,
+    String? orderId,
+    String? buyerAvatar,
+    String? storeLogo,
+    String? storeLocation,
+  }) async {
+    // 1. MySQL path if connected
+    if (_conn != null && _conn!.connected) {
+      try {
+        final existing = await _conn!.execute(
+          'SELECT conversation_id, order_id, store_id FROM conversations '
+          'WHERE buyer_id = :bId AND (store_id = :sId OR (store_id IS NULL AND seller_id = :sellerId)) '
+          'LIMIT 1',
+          {'bId': buyerId, 'sId': storeId, 'sellerId': sellerId},
         );
+        if (existing.rows.isNotEmpty) {
+          final row = existing.rows.first.assoc();
+          final cId = int.parse(row['conversation_id']!);
+          if (orderId != null && orderId.isNotEmpty && row['order_id'] != orderId) {
+            await _conn!.execute(
+              'UPDATE conversations SET order_id = :ord, last_message_at = CURRENT_TIMESTAMP WHERE conversation_id = :cId',
+              {'ord': orderId, 'cId': cId},
+            );
+          }
+          final convos = await fetchUserConversations(buyerId);
+          final match = convos.where((c) => c.id == cId).firstOrNull;
+          if (match != null) return match;
+        } else {
+          final insertRes = await _conn!.execute(
+            'INSERT INTO conversations (buyer_id, seller_id, store_id, store_name, buyer_name, order_id, last_message, last_message_at) '
+            'VALUES (:bId, :sellerId, :sId, :sName, :bName, :ord, :lastMsg, CURRENT_TIMESTAMP)',
+            {
+              'bId': buyerId,
+              'sellerId': sellerId,
+              'sId': storeId,
+              'sName': storeName,
+              'bName': buyerName,
+              'ord': orderId ?? '',
+              'lastMsg': orderId != null ? 'Percakapan terkait pesanan #$orderId' : 'Percakapan baru dimulai',
+            },
+          );
+          final newId = insertRes.lastInsertID.toInt();
+          final created = ConversationModel(
+            id: newId,
+            buyerId: buyerId,
+            sellerId: sellerId,
+            storeId: storeId,
+            storeName: storeName,
+            buyerName: buyerName,
+            otherPartyName: storeName,
+            otherPartySubtitle: storeLocation ?? 'Stan Usaha Mandiri Kampus',
+            otherPartyAvatar: storeLogo ?? 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=400&q=80',
+            lastMessage: orderId != null ? 'Percakapan terkait pesanan #$orderId' : 'Percakapan baru dimulai',
+            lastMessageAt: DateTime.now(),
+            orderId: orderId,
+            unreadCount: 0,
+          );
+          _mockConversations.removeWhere((c) => c.id == newId);
+          _mockConversations.insert(0, created);
+          return created;
+        }
+      } catch (_) {}
+    }
+
+    // 2. Mock / In-memory fallback
+    final existingIdx = _mockConversations.indexWhere(
+      (c) => c.buyerId == buyerId && (storeId.isNotEmpty ? c.storeId == storeId : c.sellerId == sellerId),
+    );
+    if (existingIdx != -1) {
+      final existing = _mockConversations[existingIdx];
+      final targetStoreId = existing.storeId.isNotEmpty ? existing.storeId : storeId;
+      if ((orderId != null && orderId.isNotEmpty && existing.orderId != orderId) ||
+          (existing.storeId.isEmpty && storeId.isNotEmpty)) {
+        final updated = existing.copyWith(
+          storeId: targetStoreId,
+          orderId: (orderId != null && orderId.isNotEmpty) ? orderId : existing.orderId,
+          lastMessageAt: DateTime.now(),
+        );
+        _mockConversations[existingIdx] = updated;
+        return updated;
       }
-      return list;
-    } catch (_) {
+      return existing;
+    }
+
+    final newId = _mockConversations.isEmpty
+        ? 1
+        : (_mockConversations.map((c) => c.id).reduce((a, b) => a > b ? a : b) + 1);
+
+    final newConvo = ConversationModel(
+      id: newId,
+      buyerId: buyerId,
+      sellerId: sellerId,
+      storeId: storeId,
+      storeName: storeName,
+      buyerName: buyerName,
+      otherPartyName: storeName,
+      otherPartySubtitle: storeLocation ?? 'Stan Usaha Mandiri Kampus',
+      otherPartyAvatar: storeLogo ?? 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=400&q=80',
+      lastMessage: orderId != null ? 'Percakapan terkait pesanan #$orderId' : 'Percakapan baru dimulai',
+      lastMessageAt: DateTime.now(),
+      orderId: orderId,
+      unreadCount: 0,
+    );
+    _mockConversations.insert(0, newConvo);
+    return newConvo;
+  }
+
+  Future<List<ChatMessageModel>> fetchMessages(int conversationId, int currentUserId) async {
+    // Security Guard: currentUserId must be buyer or seller in this conversation
+    final convo = _mockConversations.where((c) => c.id == conversationId).firstOrNull;
+    if (convo != null && convo.buyerId != currentUserId && convo.sellerId != currentUserId) {
       return [];
     }
+
+    if (_conn != null && _conn!.connected) {
+      try {
+        final res = await _conn!.execute(
+          'SELECT m.*, u.full_name, u.role '
+          'FROM messages m '
+          'JOIN users u ON m.sender_id = u.user_id '
+          'JOIN conversations c ON m.conversation_id = c.conversation_id '
+          'WHERE m.conversation_id = :cId AND (c.buyer_id = :uId OR c.seller_id = :uId) '
+          'ORDER BY m.message_id ASC',
+          {'cId': conversationId, 'uId': currentUserId},
+        );
+
+        final List<ChatMessageModel> list = [];
+        for (final r in res.rows) {
+          final a = r.assoc();
+          final mId = int.tryParse(a['message_id'] ?? '0') ?? 0;
+          final senderId = int.tryParse(a['sender_id'] ?? '0') ?? 0;
+          final isMe = senderId == currentUserId;
+
+          list.add(
+            ChatMessageModel(
+              id: 'msg_$mId',
+              dbMessageId: mId,
+              conversationId: conversationId,
+              senderId: 'user_$senderId',
+              senderName: a['full_name'] ?? 'Pengguna',
+              message: a['message_text'] ?? '',
+              timestamp: DateTime.tryParse(a['sent_at'] ?? '') ?? DateTime.now(),
+              isMe: isMe,
+              orderId: a['order_id'],
+              isRead: (a['is_read'] ?? '0') == '1',
+            ),
+          );
+        }
+        return list;
+      } catch (_) {}
+    }
+
+    return _mockMessages.where((m) => m.conversationId == conversationId).map((m) {
+      return m.copyWith(isMe: m.senderId == 'user_$currentUserId');
+    }).toList();
   }
 
   Future<ChatMessageModel?> sendMessage({
@@ -1843,38 +2307,131 @@ class DatabaseService {
     required int senderId,
     required String senderName,
     required String text,
+    String? orderId,
   }) async {
-    if (_conn == null || !_conn!.connected) return null;
-    try {
-      final res = await _conn!.execute(
-        'INSERT INTO messages (conversation_id, sender_id, message_text, is_read, sent_at) '
-        'VALUES (:cId, :sId, :text, 0, CURRENT_TIMESTAMP)',
-        {
-          'cId': conversationId,
-          'sId': senderId,
-          'text': text.trim(),
-        },
-      );
+    final cleanText = text.trim();
+    if (cleanText.isEmpty) return null;
 
-      await _conn!.execute(
-        'UPDATE conversations SET last_message_at = CURRENT_TIMESTAMP WHERE conversation_id = :cId',
-        {'cId': conversationId},
-      );
+    if (_conn != null && _conn!.connected) {
+      try {
+        final res = await _conn!.execute(
+          'INSERT INTO messages (conversation_id, sender_id, sender_name, message_text, order_id, is_read, sent_at) '
+          'VALUES (:cId, :sId, :sName, :text, :ord, 0, CURRENT_TIMESTAMP)',
+          {
+            'cId': conversationId,
+            'sId': senderId,
+            'sName': senderName,
+            'text': cleanText,
+            'ord': orderId ?? '',
+          },
+        );
 
-      final newMsgId = res.lastInsertID.toInt();
-      return ChatMessageModel(
-        id: 'msg_$newMsgId',
-        dbMessageId: newMsgId,
-        conversationId: conversationId,
-        senderId: 'user_$senderId',
-        senderName: senderName,
-        message: text.trim(),
-        timestamp: DateTime.now(),
-        isMe: true,
-      );
-    } catch (_) {
-      return null;
+        await _conn!.execute(
+          'UPDATE conversations SET last_message = :text, last_message_at = CURRENT_TIMESTAMP WHERE conversation_id = :cId',
+          {'text': cleanText, 'cId': conversationId},
+        );
+
+        final newMsgId = res.lastInsertID.toInt();
+        final dbMsg = ChatMessageModel(
+          id: 'msg_$newMsgId',
+          dbMessageId: newMsgId,
+          conversationId: conversationId,
+          senderId: 'user_$senderId',
+          senderName: senderName,
+          message: cleanText,
+          timestamp: DateTime.now(),
+          isMe: true,
+          orderId: orderId,
+          isRead: false,
+        );
+        _mockMessages.add(dbMsg);
+        final idx = _mockConversations.indexWhere((c) => c.id == conversationId);
+        if (idx != -1) {
+          final existing = _mockConversations[idx];
+          _mockConversations[idx] = existing.copyWith(
+            lastMessage: cleanText,
+            lastMessageAt: DateTime.now(),
+            orderId: orderId ?? existing.orderId,
+          );
+        }
+        return dbMsg;
+      } catch (_) {}
     }
+
+    final newMsgId = _mockMessages.isEmpty
+        ? 1
+        : (_mockMessages.map((m) => m.dbMessageId ?? 0).reduce((a, b) => a > b ? a : b) + 1);
+
+    final newMsg = ChatMessageModel(
+      id: 'msg_$newMsgId',
+      dbMessageId: newMsgId,
+      conversationId: conversationId,
+      senderId: 'user_$senderId',
+      senderName: senderName,
+      message: cleanText,
+      timestamp: DateTime.now(),
+      isMe: true,
+      orderId: orderId,
+      isRead: false,
+    );
+    _mockMessages.add(newMsg);
+
+    final idx = _mockConversations.indexWhere((c) => c.id == conversationId);
+    if (idx != -1) {
+      final existing = _mockConversations[idx];
+      _mockConversations[idx] = existing.copyWith(
+        lastMessage: cleanText,
+        lastMessageAt: DateTime.now(),
+        orderId: orderId ?? existing.orderId,
+      );
+    }
+
+    return newMsg;
+  }
+
+  Future<void> markConversationAsRead(int conversationId, int readerUserId) async {
+    if (_conn != null && _conn!.connected) {
+      try {
+        await _conn!.execute(
+          'UPDATE messages SET is_read = 1 WHERE conversation_id = :cId AND sender_id != :uId',
+          {'cId': conversationId, 'uId': readerUserId},
+        );
+      } catch (_) {}
+    }
+
+    for (int i = 0; i < _mockMessages.length; i++) {
+      if (_mockMessages[i].conversationId == conversationId &&
+          _mockMessages[i].senderId != 'user_$readerUserId') {
+        _mockMessages[i] = _mockMessages[i].copyWith(isRead: true);
+      }
+    }
+
+    final idx = _mockConversations.indexWhere((c) => c.id == conversationId);
+    if (idx != -1) {
+      _mockConversations[idx] = _mockConversations[idx].copyWith(unreadCount: 0);
+    }
+  }
+
+  int getUnreadCountForBuyer(int buyerId) {
+    int total = 0;
+    final convos = _mockConversations.where((c) => c.buyerId == buyerId);
+    for (final c in convos) {
+      total += _mockMessages
+          .where((m) => m.conversationId == c.id && m.senderId != 'user_$buyerId' && !m.isRead)
+          .length;
+    }
+    return total;
+  }
+
+  int getUnreadCountForStore(String storeId, int sellerId) {
+    int total = 0;
+    final convos = _mockConversations.where((c) => c.storeId == storeId || c.sellerId == sellerId);
+    for (final c in convos) {
+      total += _mockMessages
+          .where((m) => m.conversationId == c.id && m.senderId != 'user_$sellerId' && !m.isRead)
+          .length;
+    }
+    return total;
   }
 
   // ==========================================
@@ -2037,6 +2594,8 @@ class DatabaseService {
       storeLocation: row['store_location'] ?? '',
       storeDescription: row['store_desc'],
       storeContactPhone: row['contact_phone'],
+      storeFaculty: row['faculty'] ?? row['store_faculty'],
+      storeBannerPhoto: row['banner_photo'],
       isStoreOpen: (row['store_status'] ?? 'buka') == 'buka',
       verificationStatus: vStatus,
       rejectionReason: row['rejection_reason'],

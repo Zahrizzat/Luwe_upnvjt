@@ -23,6 +23,8 @@ class UserModel {
   final String storeLocation;
   final String? storeDescription;
   final String? storeContactPhone;
+  final String? storeFaculty;
+  final String? storeBannerPhoto;
   final bool isStoreOpen;
   final StoreVerificationStatus verificationStatus;
   final String? rejectionReason;
@@ -48,6 +50,8 @@ class UserModel {
     this.storeLocation = '',
     this.storeDescription,
     this.storeContactPhone,
+    this.storeFaculty,
+    this.storeBannerPhoto,
     this.isStoreOpen = true,
     this.verificationStatus = StoreVerificationStatus.none,
     this.rejectionReason,
@@ -103,6 +107,8 @@ class UserModel {
     String? storeLocation,
     String? storeDescription,
     String? storeContactPhone,
+    String? storeFaculty,
+    String? storeBannerPhoto,
     bool? isStoreOpen,
     StoreVerificationStatus? verificationStatus,
     String? rejectionReason,
@@ -128,6 +134,8 @@ class UserModel {
       storeLocation: storeLocation ?? this.storeLocation,
       storeDescription: storeDescription ?? this.storeDescription,
       storeContactPhone: storeContactPhone ?? this.storeContactPhone,
+      storeFaculty: storeFaculty ?? this.storeFaculty,
+      storeBannerPhoto: storeBannerPhoto ?? this.storeBannerPhoto,
       isStoreOpen: isStoreOpen ?? this.isStoreOpen,
       verificationStatus: verificationStatus ?? this.verificationStatus,
       rejectionReason: rejectionReason ?? this.rejectionReason,

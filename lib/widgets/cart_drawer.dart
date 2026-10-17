@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../constants/app_colors.dart';
-import '../constants/app_config.dart';
 import '../models/order_model.dart';
 import '../providers/app_state.dart';
 import 'auth_guard_dialog.dart';
@@ -19,15 +18,13 @@ class _CartDrawerState extends State<CartDrawer> {
   DeliveryMethod _deliveryMethod = DeliveryMethod.pickup;
   PaymentMethod _paymentMethod = PaymentMethod.qris;
   final TextEditingController _destinationController =
-      TextEditingController(text: 'Kantin Giri Reksa');
+      TextEditingController(text: 'Stan / Toko Usaha Mahasiswa');
   final TextEditingController _notesController = TextEditingController();
-  final TextEditingController _voucherController = TextEditingController();
 
   @override
   void dispose() {
     _destinationController.dispose();
     _notesController.dispose();
-    _voucherController.dispose();
     super.dispose();
   }
 
@@ -137,10 +134,6 @@ class _CartDrawerState extends State<CartDrawer> {
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                       ),
-                                      Text(
-                                        cartItem.selectedSpiceLevel,
-                                        style: const TextStyle(fontSize: 11, color: AppColors.primary, fontWeight: FontWeight.w600),
-                                      ),
                                       if (!state.isItemStoreOpen(cartItem.item))
                                         Container(
                                           margin: const EdgeInsets.symmetric(vertical: 2),
@@ -216,7 +209,7 @@ class _CartDrawerState extends State<CartDrawer> {
                                   if (val) {
                                     setState(() {
                                       _deliveryMethod = DeliveryMethod.pickup;
-                                      _destinationController.text = 'Ambil di Kantin Giri Reksa';
+                                      _destinationController.text = 'Ambil di Stan Usaha Mahasiswa';
                                     });
                                   }
                                 },
@@ -272,53 +265,6 @@ class _CartDrawerState extends State<CartDrawer> {
                         ),
                         const SizedBox(height: 12),
 
-                        // Saved Favorite Locations Chips (if delivery selected)
-                        if (_deliveryMethod == DeliveryMethod.delivery && state.deliveryLocations.isNotEmpty) ...[
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              const Text(
-                                'Pilih Titik Favoritmu:',
-                                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.textSecondary),
-                              ),
-                              Text(
-                                '${state.deliveryLocations.length} Tersimpan',
-                                style: const TextStyle(fontSize: 10, color: AppColors.textMuted),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 6),
-                          SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
-                            child: Row(
-                              children: state.deliveryLocations.map((loc) {
-                                return Container(
-                                  margin: const EdgeInsets.only(right: 6),
-                                  child: ActionChip(
-                                    avatar: Icon(Icons.place_rounded, size: 14, color: loc.isPrimary ? AppColors.primaryRed : AppColors.primary),
-                                    label: Text('${loc.title}${loc.isPrimary ? " (Utama)" : ""}'),
-                                    onPressed: () {
-                                      setState(() {
-                                        _destinationController.text = '${loc.title} • ${loc.areaName} (${loc.detailAddress})';
-                                        if (_notesController.text.isEmpty && loc.deliveryNote != null) {
-                                          _notesController.text = loc.deliveryNote!;
-                                        }
-                                      });
-                                    },
-                                    backgroundColor: loc.isPrimary ? AppColors.cream : AppColors.canvas,
-                                    side: BorderSide(color: loc.isPrimary ? AppColors.goldenYellow : AppColors.surfaceBorder),
-                                    labelStyle: TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: loc.isPrimary ? FontWeight.w800 : FontWeight.w600,
-                                      color: loc.isPrimary ? AppColors.primaryRed : AppColors.textPrimary,
-                                    ),
-                                  ),
-                                );
-                              }).toList(),
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                        ],
 
                         // Location Details
                         Text(
@@ -385,12 +331,12 @@ class _CartDrawerState extends State<CartDrawer> {
                                 onSelected: (val) {
                                   if (val) setState(() => _paymentMethod = PaymentMethod.cash);
                                 },
-                                selectedColor: AppColors.cream,
+                                selectedColor: AppColors.secondaryLight,
                                 labelStyle: TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w700,
                                   color: _paymentMethod == PaymentMethod.cash
-                                      ? AppColors.accentOrange
+                                      ? AppColors.secondaryDark
                                       : AppColors.textPrimary,
                                 ),
                               ),
@@ -409,108 +355,6 @@ class _CartDrawerState extends State<CartDrawer> {
                           ),
                         ),
 
-                        const SizedBox(height: 16),
-                        // Voucher Diskon Kampus
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text('Voucher Diskon Kampus:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
-                            if (state.appliedDiscount > 0)
-                              Text(
-                                '-Rp ${state.appliedDiscount}',
-                                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: AppColors.primaryRed),
-                              ),
-                          ],
-                        ),
-                        const SizedBox(height: 6),
-                        if (state.appliedVoucherCode != null) ...[
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                            decoration: BoxDecoration(
-                              color: AppColors.cream,
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: AppColors.goldenYellow),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Row(
-                                  children: [
-                                    const Icon(Icons.confirmation_num_rounded, size: 16, color: AppColors.accentOrange),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      '${state.appliedVoucherCode} (Hemat Rp ${state.appliedDiscount})',
-                                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: AppColors.primaryRed),
-                                    ),
-                                  ],
-                                ),
-                                InkWell(
-                                  onTap: () => state.removeVoucher(),
-                                  child: const Icon(Icons.close_rounded, size: 16, color: AppColors.accentOrange),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                        ] else ...[
-                          Row(
-                            children: [
-                              Expanded(
-                                child: TextField(
-                                  controller: _voucherController,
-                                  textCapitalization: TextCapitalization.characters,
-                                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
-                                  decoration: const InputDecoration(
-                                    hintText: 'Kode voucher (cth: UPNDIES50)',
-                                    prefixIcon: Icon(Icons.local_offer_outlined, size: 16, color: AppColors.textMuted),
-                                    contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              ElevatedButton(
-                                onPressed: () {
-                                  final err = state.applyVoucher(_voucherController.text);
-                                  if (err != null) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(err),
-                                        backgroundColor: AppColors.error,
-                                        behavior: SnackBarBehavior.floating,
-                                      ),
-                                    );
-                                  } else {
-                                    _voucherController.clear();
-                                  }
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppColors.primaryOrange,
-                                  foregroundColor: Colors.white,
-                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-                                ),
-                                child: const Text('Pakai', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800)),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 6),
-                          SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
-                            child: Row(
-                              children: AppConfig.validVouchers.entries.map((e) {
-                                return Padding(
-                                  padding: const EdgeInsets.only(right: 6),
-                                  child: ActionChip(
-                                    label: Text('${e.key} (-Rp ${e.value ~/ 1000}rb)'),
-                                    onPressed: () => state.applyVoucher(e.key),
-                                    backgroundColor: const Color(0xFFF1F5F9),
-                                    side: const BorderSide(color: AppColors.surfaceBorder),
-                                    labelStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: AppColors.textSecondary),
-                                  ),
-                                );
-                              }).toList(),
-                            ),
-                          ),
-                        ],
                       ],
                     ),
             ),
@@ -615,7 +459,7 @@ class _CartDrawerState extends State<CartDrawer> {
                               style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w700,
-                                color: _deliveryMethod == DeliveryMethod.pickup ? AppColors.accentOrange : AppColors.textPrimary,
+                                color: _deliveryMethod == DeliveryMethod.pickup ? AppColors.secondaryDark : AppColors.textPrimary,
                               ),
                             ),
                           ],
@@ -627,11 +471,11 @@ class _CartDrawerState extends State<CartDrawer> {
                             children: [
                               Text(
                                 'Diskon Voucher (${state.appliedVoucherCode}):',
-                                style: const TextStyle(fontSize: 12, color: AppColors.accentOrange, fontWeight: FontWeight.w700),
+                                style: const TextStyle(fontSize: 12, color: AppColors.secondaryDark, fontWeight: FontWeight.w700),
                               ),
                               Text(
                                 '-Rp $discount',
-                                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: AppColors.primaryRed),
+                                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: AppColors.secondaryDark),
                               ),
                             ],
                           ),

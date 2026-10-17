@@ -20,8 +20,9 @@ class AppColors {
   /// Primary Orange: `#FF6900` - Tombol aksi sekunder, penanda penting, elemen promosi
   static const Color primaryOrange = Color(0xFFFF6900);
 
-  /// Accent Orange: `#CC501D` - Aksen hangat, penekanan teks/border oranye pekat
+  /// Accent Orange / Terracotta: `#CC501D` - Aksen hangat, penekanan teks/border oranye pekat
   static const Color accentOrange = Color(0xFFCC501D);
+  static const Color terracotta = Color(0xFFCC501D);
 
   /// Golden Yellow: `#F6D77D` - Banner promosi, highlight, bintang rating
   static const Color goldenYellow = Color(0xFFF6D77D);
